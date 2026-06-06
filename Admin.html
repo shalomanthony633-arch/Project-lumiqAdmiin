@@ -155,7 +155,21 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 @supports(-webkit-touch-callout:none){
   input,textarea,select{font-size:16px}
 }
+
+/* Stats refresh menu */
+#stats-refresh-card .card-title{display:flex;align-items:center;gap:8px}
+#stats-refresh-card button{width:100%;justify-content:center}
+
+/* Previous months list */
+#st-previous-months{max-height:400px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#st-previous-months::-webkit-scrollbar{width:4px}
+#st-previous-months::-webkit-scrollbar-track{background:transparent}
+#st-previous-months::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:2px}
+
+/* Month label in stats header */
+#st-current-month{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.04em;text-transform:none}
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -200,8 +214,12 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 
   <!-- STATS TAB -->
   <div class="tab-panel on" id="tab-stats">
+    <!-- Current Month Stats -->
     <div class="card">
-      <div class="card-title">📊 Overview</div>
+      <div class="card-title">
+        <span>📊 Overview — <span id="st-current-month">This Month</span></span>
+        <button class="btn btn-blue btn-sm" onclick="openStatsRefreshMenu()" style="padding:6px 12px;font-size:11px">🔄 Refresh</button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:14px;text-align:center">
           <div style="font-size:28px;font-weight:800;color:#fff;font-family:'DM Mono',monospace" id="st-total">—</div>
@@ -221,6 +239,26 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
         </div>
       </div>
       <div id="st-courses-breakdown" style="font-size:12px;color:rgba(255,255,255,0.45)">Loading course breakdown...</div>
+    </div>
+
+    <!-- Stats Refresh Menu (hidden by default) -->
+    <div class="card" id="stats-refresh-card" style="display:none">
+      <div class="card-title">🔄 Stats Options</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-blue" onclick="resetStatsForNewMonth()" style="width:100%;justify-content:center">
+          <span>📅 Reset for New Month</span>
+        </button>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);line-height:1.5;text-align:center">
+          Archives this month's stats and resets counters to zero
+        </div>
+        <button class="btn btn-white" onclick="closeStatsRefreshMenu()" style="margin-top:4px">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Previous Months History -->
+    <div class="card">
+      <div class="card-title">📅 Previous Months</div>
+      <div id="st-previous-months" style="font-size:12px;color:rgba(255,255,255,0.45)">Loading history...</div>
     </div>
   </div>
 
@@ -558,6 +596,20 @@ let allCourses = [];
 let coursesListener = null;
 let questionsListener = null;
 
+// ── Yabatech Marketing — only courses in the CBT app ──
+const CBT_COURSES = [
+  {icon:'💼', name:'Introduction to Business'},
+  {icon:'🛒', name:'Marketing'},
+  {icon:'💻', name:'Computer'},
+  {icon:'⚖️', name:'Principles of Law'},
+  {icon:'📖', name:'English'},
+  {icon:'💰', name:'Economics'},
+  {icon:'🔢', name:'Business Math'},
+  {icon:'🧠', name:'Psychology'},
+  {icon:'📊', name:'Principles of Accounting'},
+  {icon:'🏛️', name:'Citizenship Education'},
+];
+
 function createCourse() {
   const icon = document.getElementById('new-course-icon').value.trim() || '📚';
   const name = document.getElementById('new-course-name').value.trim();
@@ -579,25 +631,26 @@ function createCourse() {
 // ══ FIXED: Load courses - now shows all courses with delete buttons ══
 function loadCourses() {
   if(coursesListener) coursesListener.off();
-  
-  // First get deleted courses list to filter out hardcoded ones that were deleted
+
+  // IMMEDIATELY populate selects with hardcoded courses — don't wait for Firebase
+  // This fixes the "select course shows empty" bug
+  allCourses = [...CBT_COURSES];
+  updateCourseSelects();
+
+  // Then sync with Firebase (deleted courses + custom courses)
   db.ref('deleted_courses').once('value').then(deletedSnap => {
     const deletedCourses = {};
     deletedSnap.forEach(child => {
       deletedCourses[child.val().name] = true;
     });
-    
-    // Start with hardcoded courses (only if not deleted)
-    const defaultCourses = [
-      {icon:'📊', name:'Financial Accounting'},
-      {icon:'📈', name:'Principles of Economics'},
-      {icon:'🏢', name:'Business Management'}
-    ].filter(c => !deletedCourses[c.name]);
-    
+
+    // Use module-level CBT_COURSES — only show CBT app courses
+    const defaultCourses = CBT_COURSES.filter(c => !deletedCourses[c.name]);
+
     coursesListener = db.ref('courses');
     coursesListener.on('value', snap => {
       allCourses = [...defaultCourses]; // Start with non-deleted defaults
-      
+
       snap.forEach(child => {
         const d = child.val();
         // Only add if not already in defaults and not deleted
@@ -609,21 +662,29 @@ function loadCourses() {
       updateCourseSelects();
       renderCoursesList();
     });
+  }).catch(() => {
+    // Firebase failed — hardcoded courses already populated above, so dropdown still works
+    console.warn('Firebase courses sync failed — using offline course list');
   });
 }
 
 function updateCourseSelects() {
+  // All Firebase + default courses for general selects
   const opts = '<option value="">-- Select Course --</option>'
     + allCourses.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
   const filterOpts = '<option value="all">All Courses</option>'
     + allCourses.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
-  
+
+  // Bulk import ONLY shows the 10 CBT app courses — locked, no extras
+  const bulkOpts = '<option value="">-- Select Course --</option>'
+    + CBT_COURSES.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+
   const sel = document.getElementById('q-subject');
   const filterSel = document.getElementById('q-filter');
   const bulkSel = document.getElementById('bulk-subject');
-  
+
   if(sel) sel.innerHTML = opts;
-  if(bulkSel) bulkSel.innerHTML = opts;
+  if(bulkSel) bulkSel.innerHTML = bulkOpts;
   if(filterSel) filterSel.innerHTML = filterOpts;
 }
 
@@ -793,14 +854,23 @@ function deleteQ(id) {
 
 // ══ STATS ══
 function loadStats() {
+  // Update "This Month" label to show actual current month name
+  const now = new Date();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel = monthNames[now.getMonth()] + ' ' + now.getFullYear();
+  const monthLabelEl = document.getElementById('st-current-month');
+  if(monthLabelEl) monthLabelEl.textContent = monthLabel;
+
   db.ref('keys').once('value').then(snap => {
     let total=0, active=0, revenue=0;
     snap.forEach(child => {
       total++;
       const d = child.val();
       if(d.active!==false) active++;
-      if(d.plan==='semester') revenue+=1500;
+      if(d.plan==='semester') revenue+=6500;
+      else if(d.plan==='monthly') revenue+=2500;
       else if(d.plan==='month') revenue+=800;
+      else if(d.plan==='yearly'||d.plan==='Yearly') revenue+=20000;
     });
     document.getElementById('st-total').textContent = total;
     document.getElementById('st-active').textContent = active;
@@ -825,6 +895,134 @@ function loadStats() {
           <span style="color:#fbbf24;font-weight:700">${count}</span>
         </div>`
       ).join('');
+  });
+  // Load previous months history
+  loadPreviousMonths();
+}
+
+// ══ MONTHLY STATS ARCHIVE SYSTEM ══
+// Firebase schema: monthly_stats/{YYYY-MM} → {revenue, totalStudents, activeKeys, questions, timestamp, monthName}
+//                  stats_reset_log/{timestamp} → {action, fromMonth, toMonth, archivedAt}
+
+function openStatsRefreshMenu() {
+  const card = document.getElementById('stats-refresh-card');
+  if(card) card.style.display = card.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeStatsRefreshMenu() {
+  const card = document.getElementById('stats-refresh-card');
+  if(card) card.style.display = 'none';
+}
+
+function getCurrentMonthKey() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+}
+
+function getMonthName(monthKey) {
+  const [year, month] = monthKey.split('-');
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return names[parseInt(month)-1] + ' ' + year;
+}
+
+async function resetStatsForNewMonth() {
+  if(!confirm('📅 Reset Stats for New Month?\n\nThis will:\n1. Archive this month\'s stats (revenue, students, questions)\n2. Reset all counters to ZERO\n\nStudents and their keys will NOT be deleted — only the counters reset.\n\nAre you sure?')) return;
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Archiving...';
+
+  try {
+    // 1. Read current stats
+    const keysSnap = await db.ref('keys').once('value');
+    let total=0, active=0, revenue=0;
+    keysSnap.forEach(child => {
+      total++;
+      const d = child.val();
+      if(d.active!==false) active++;
+      if(d.plan==='semester') revenue+=6500;
+      else if(d.plan==='monthly') revenue+=2500;
+      else if(d.plan==='month') revenue+=800;
+      else if(d.plan==='yearly'||d.plan==='Yearly') revenue+=20000;
+    });
+
+    const questionsSnap = await db.ref('questions').once('value');
+    const questionsCount = questionsSnap.numChildren();
+
+    const now = new Date();
+    const monthKey = getCurrentMonthKey();
+    const monthName = getMonthName(monthKey);
+
+    // 2. Archive to monthly_stats/{YYYY-MM}
+    await db.ref('monthly_stats/' + monthKey).set({
+      revenue: revenue,
+      totalStudents: total,
+      activeKeys: active,
+      questions: questionsCount,
+      monthName: monthName,
+      timestamp: Date.now()
+    });
+
+    // 3. Log the reset
+    await db.ref('stats_reset_log').push({
+      action: 'monthly_reset',
+      monthKey: monthKey,
+      monthName: monthName,
+      archivedStats: {revenue, totalStudents: total, activeKeys: active, questions: questionsCount},
+      archivedAt: Date.now()
+    });
+
+    // 4. Reset current stats display
+    document.getElementById('st-total').textContent = '0';
+    document.getElementById('st-active').textContent = '0';
+    document.getElementById('st-revenue').textContent = '0';
+
+    closeStatsRefreshMenu();
+    loadPreviousMonths();
+    toast('✅ Stats archived for ' + monthName + '. Counters reset to zero.');
+
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>📅 Reset for New Month</span>';
+  }
+}
+
+function loadPreviousMonths() {
+  const el = document.getElementById('st-previous-months');
+  if(!el) return;
+
+  db.ref('monthly_stats').orderByKey().limitToLast(12).once('value').then(snap => {
+    const months = [];
+    snap.forEach(child => {
+      months.push({key: child.key, ...child.val()});
+    });
+    months.reverse(); // Most recent first
+
+    if(months.length === 0) {
+      el.innerHTML = '<div class="empty" style="padding:20px;font-size:12px">No archived months yet. Use "Refresh → Reset for New Month" to archive this month\'s stats.</div>';
+      return;
+    }
+
+    el.innerHTML = months.map(m => `
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;margin-bottom:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85)">${m.monthName||getMonthName(m.key)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">
+            ${new Date(m.timestamp).toLocaleDateString('en-NG',{day:'2-digit',month:'short',year:'numeric'})}
+          </div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <div style="font-size:14px;font-weight:800;color:#a78bfa;font-family:'DM Mono',monospace">₦${(m.revenue||0).toLocaleString()}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">
+            <span style="color:#4ade80">${m.activeKeys||0} active</span> · ${m.totalStudents||0} total
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }).catch(() => {
+    el.innerHTML = '<div class="empty" style="padding:20px;font-size:12px">Unable to load previous months.</div>';
   });
 }
 
@@ -1161,6 +1359,7 @@ function loadAll() {
   loadStudents();
   loadCourses();
   loadQuestions();
+  loadPreviousMonths();
   initAdminChat();
 }
 
