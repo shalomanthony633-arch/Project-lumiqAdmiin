@@ -10,6 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({
@@ -22,6 +23,39 @@ firebase.initializeApp({
   appId:"1:633837081524:web:66768df969657b128c98e1"
 });
 const db = firebase.database();
+
+// ══ FIREBASE AUTH (Anonymous) — required for write permissions ══
+let _firebaseAuthReady = false;
+firebase.auth().onAuthStateChanged(user => {
+  _firebaseAuthReady = true;
+  if (user) {
+    console.log('[Firebase] Auth ready — UID:', user.uid);
+  } else {
+    console.log('[Firebase] No auth user');
+  }
+});
+
+function ensureFirebaseAuth() {
+  return new Promise((resolve, reject) => {
+    if (firebase.auth().currentUser) { resolve(firebase.auth().currentUser); return; }
+    const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+      unsubscribe();
+      if (user) { resolve(user); }
+      else {
+        firebase.auth().signInAnonymously()
+          .then(cred => resolve(cred.user))
+          .catch(err => reject(err));
+      }
+    });
+    setTimeout(() => {
+      if (!firebase.auth().currentUser) {
+        firebase.auth().signInAnonymously()
+          .then(cred => resolve(cred.user))
+          .catch(err => reject(err));
+      }
+    }, 1000);
+  });
+}
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -132,6 +166,7 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 }
 @supports(-webkit-touch-callout:none){input,textarea,select{font-size:16px}}
 </style>
+<base target="_blank">
 <base target="_blank">
 <base target="_blank">
 </head>
@@ -563,19 +598,22 @@ document.getElementById('search-students').addEventListener('input', function(){
   renderStudents(allStudents.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.key||'').toLowerCase().includes(q)));
 });
 
-function toggleStudent(id,isActive){
+async function toggleStudent(id,isActive){
+  try{ await ensureFirebaseAuth(); }catch(e){ toast('Auth failed: '+e.message); return; }
   db.ref('keys/'+id).update({active:!isActive}).then(()=>{
     toast(isActive?'🔴 Deactivated':'🟢 Activated'); loadStats();
   });
 }
 
-function deleteStudent(id,name){
+async function deleteStudent(id,name){
   if(!confirm(`Delete ${name}? Their key will stop working.`)) return;
+  try{ await ensureFirebaseAuth(); }catch(e){ toast('Auth failed: '+e.message); return; }
   db.ref('keys/'+id).remove().then(()=>{ toast('Deleted'); loadStats(); });
 }
 
-function resetDevice(id){
+async function resetDevice(id){
   if(!confirm('Reset device binding? They can use the key on a new device.')) return;
+  try{ await ensureFirebaseAuth(); }catch(e){ toast('Auth failed: '+e.message); return; }
   db.ref('keys/'+id).update({deviceId:null}).then(()=>toast('✅ Device reset'));
 }
 
@@ -933,6 +971,17 @@ async function saveBulk(){
   const btn=document.getElementById('bulk-save-btn');
   const status=document.getElementById('bulk-status');
   if(!subj||!_bulkParsed.length) return;
+
+  // Ensure Firebase Auth is ready before writing
+  try {
+    status.textContent = 'Authenticating with Firebase...';
+    await ensureFirebaseAuth();
+  } catch(authErr) {
+    status.innerHTML = `<span style="color:#f87171">❌ Firebase auth failed: ${authErr.message}</span>`;
+    btn.disabled = false; btn.textContent = '✅ Save All';
+    return;
+  }
+
   btn.disabled=true; btn.textContent='Saving...';
   const courseObj=CBT_COURSES.find(c=>c.name===subj);
   const icon=courseObj?(courseObj.icon||'📚'):'📚';
@@ -941,7 +990,10 @@ async function saveBulk(){
     try{
       await db.ref('questions').push({subject:subj,icon,q:q.q,options:q.options,answer:q.answer,explanation:q.explanation,created:Date.now()});
       saved++; status.textContent=`Saving... ${saved}/${_bulkParsed.length}`;
-    }catch(e){ failed++; }
+    }catch(e){ 
+      failed++; 
+      console.error('Firebase push failed:', e);
+    }
   }
   btn.disabled=false; btn.textContent='✅ Save All';
   status.innerHTML=`<span style="color:#4ade80">✅ ${saved} questions saved to ${subj}!</span>${failed>0?` <span style="color:#f87171">${failed} failed`:''}`;
@@ -1024,8 +1076,9 @@ function hideDeleteIfOther(){
   document.querySelectorAll('.chat-msg').forEach(el=>el.classList.remove('show-delete'));
 }
 
-function deleteChatMsg(msgId){
+async function deleteChatMsg(msgId){
   if(!confirm('Delete this message?')){ const m=document.getElementById('msg-'+msgId); if(m) m.classList.remove('show-delete'); return; }
+  try{ await ensureFirebaseAuth(); }catch(e){ toast('Auth failed: '+e.message); return; }
   db.ref('chat/'+msgId).remove().then(()=>toast('Message deleted')).catch(e=>toast('Error: '+e.message));
 }
 
@@ -1033,10 +1086,11 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.chat-msg')) document.querySelectorAll('.chat-msg').forEach(el=>el.classList.remove('show-delete'));
 });
 
-function adminSendChat(){
+async function adminSendChat(){
   const inp=document.getElementById('admin-chat-in');
   const text=inp.value.trim();
   if(!text) return;
+  try{ await ensureFirebaseAuth(); }catch(e){ toast('Auth failed: '+e.message); return; }
   inp.value='';
   db.ref('chat').push({name:'Admin 👑',text,ts:Date.now()}).catch(()=>{ inp.value=text; toast('Failed to send'); });
 }
