@@ -34,7 +34,7 @@ body{font-family:'DM Sans',sans-serif;background:#04060f;color:#fff;min-height:1
 @keyframes lcardin{from{opacity:0;transform:translateY(40px) scale(0.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 .pin-btn{width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
 .pin-err{font-size:12px;color:#fca5a5;margin-top:10px;min-height:18px}
-.finger-btn{width:100%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#a5b4fc;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+.finger-btn{width:100%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#a5b4fc;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:10px;display:none!important;align-items:center;justify-content:center;gap:8px}
 .finger-btn:active{transform:scale(0.98)}
 
 /* APP */
@@ -56,15 +56,19 @@ textarea.field{resize:none;min-height:80px}
 
 /* Buttons */
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;transition:all 0.18s;padding:11px 18px;font-size:13px;-webkit-appearance:none}
+.btn:disabled{opacity:0.5;cursor:not-allowed;pointer-events:none}
 .btn-green{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80}
-.btn-green:hover{background:rgba(34,197,94,0.25)}
 .btn-red{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#f87171}
-.btn-red:hover{background:rgba(239,68,68,0.22)}
 .btn-blue{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#a5b4fc}
-.btn-blue:hover{background:rgba(99,102,241,0.25)}
 .btn-white{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);color:#fff;width:100%}
-.btn-white:hover{background:rgba(255,255,255,0.18)}
 .btn-sm{padding:6px 12px;font-size:11px}
+@media(hover:hover){
+.btn-green:hover{background:rgba(34,197,94,0.25)}
+.btn-red:hover{background:rgba(239,68,68,0.22)}
+.btn-blue:hover{background:rgba(99,102,241,0.25)}
+.btn-white:hover{background:rgba(255,255,255,0.18)}
+.s-btn:hover{background:rgba(255,255,255,0.08);color:#fff}
+}
 
 /* Student list */
 .student-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
@@ -78,7 +82,6 @@ textarea.field{resize:none;min-height:80px}
 .s-badge.inactive{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
 .s-actions{display:flex;gap:6px;flex-shrink:0}
 .s-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:4px;border-radius:6px;transition:background 0.15s;color:rgba(255,255,255,0.6)}
-.s-btn:hover{background:rgba(255,255,255,0.08);color:#fff}
 
 /* Questions */
 .q-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px}
@@ -91,7 +94,8 @@ textarea.field{resize:none;min-height:80px}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* Tabs */
-.tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:'DM Sans',sans-serif;-webkit-appearance:none}
 .tab.on{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1)}
 .tab-panel{display:none}.tab-panel.on{display:block}
@@ -116,8 +120,9 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 .alert-green{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#a7f3d0}
 
 /* Previous months scroll */
-#st-previous-months{max-height:400px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#st-previous-months{max-height:400px;overflow-y:auto;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(to bottom,transparent 0,black 12px,black calc(100% - 12px),transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0,black 12px,black calc(100% - 12px),transparent 100%)}
 #st-current-month{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.04em;text-transform:none}
+#search-students:focus{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.09)}
 
 @media(max-width:400px){
   .login-card{padding:32px 24px}
@@ -127,6 +132,7 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 }
 @supports(-webkit-touch-callout:none){input,textarea,select{font-size:16px}}
 </style>
+<base target="_blank">
 <base target="_blank">
 </head>
 <body>
@@ -277,7 +283,7 @@ C. Equity = Assets + Liabilities
 D. None of the above
 Answer: A
 Explanation: The accounting equation must always balance." rows="12" style="min-height:200px;font-size:13px;font-family:monospace;line-height:1.6"></textarea>
-      <div id="bulk-preview" style="display:none;margin-top:12px"></div>
+      <div id="bulk-preview" style="display:none;margin-top:12px;max-height:400px;overflow-y:auto"></div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-blue" onclick="previewBulk()" style="flex:1">👁 Preview</button>
         <button class="btn btn-green" id="bulk-save-btn" onclick="saveBulk()" style="flex:1;display:none">✅ Save All</button>
@@ -322,7 +328,7 @@ Explanation: The accounting equation must always balance." rows="12" style="min-
   <div class="tab-panel" id="tab-chat">
     <div class="card">
       <div class="card-title">💬 Class Chat <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:400;text-transform:none;letter-spacing:0">(Long press to delete)</span></div>
-      <div id="admin-chat-msgs" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:4px 0;-webkit-overflow-scrolling:touch"></div>
+      <div id="admin-chat-msgs" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:4px 0;-webkit-overflow-scrolling:touch;overflow-x:hidden"></div>
       <div style="display:flex;gap:8px">
         <input class="field" id="admin-chat-in" placeholder="Message as Admin..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')adminSendChat()">
         <button class="btn btn-blue" onclick="adminSendChat()" style="padding:11px 16px">✈</button>
@@ -428,7 +434,7 @@ async function authenticateFingerprint() {
 
 if(window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable){
   PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok => {
-    if(ok) document.getElementById('finger-btn').style.display='flex';
+    if(ok) document.getElementById('finger-btn').style.setProperty('display','flex','important');
   });
 }
 
@@ -474,7 +480,7 @@ function loadAnalytics() {
     document.getElementById('an-bound').textContent = bound;
 
     // Plan breakdown
-    const planLabels = {monthly:'Monthly ₦2,500', quarterly:'Semester ₦6,500', semester:'Full Year ₦20,000', month:'Month ₦800'};
+    const planLabels = {monthly:'Monthly ₦2,500', quarterly:'Quarterly ₦2,500', semester:'Semester ₦6,500', month:'Month ₦800', yearly:'Yearly ₦20,000'};
     const planEl = document.getElementById('an-plans');
     if(!Object.keys(plans).length){ planEl.textContent='No students yet.'; }
     else {
@@ -543,10 +549,10 @@ function renderStudents(list) {
       </div>
       <span class="s-badge ${s.active!==false?'active':'inactive'}">${s.active!==false?'Active':'Off'}</span>
       <div class="s-actions">
-        <button class="s-btn" onclick="toggleStudent('${s.id}',${s.active!==false})" title="${s.active!==false?'Deactivate':'Activate'}">${s.active!==false?'🔴':'🟢'}</button>
-        <button class="s-btn" onclick="resetDevice('${s.id}')" title="Reset Device">📱</button>
-        <button class="s-btn" onclick="waStudent('${s.key}','${s.name}','${s.phone||''}')" title="WhatsApp">💬</button>
-        <button class="s-btn" onclick="deleteStudent('${s.id}','${s.name}')" title="Delete">🗑</button>
+        <button class="s-btn" onclick="toggleStudent('${s.id}',${s.active!==false})" title="${s.active!==false?'Deactivate':'Activate'}" aria-label="${s.active!==false?'Deactivate student':'Activate student'}">${s.active!==false?'🔴':'🟢'}</button>
+        <button class="s-btn" onclick="resetDevice('${s.id}')" title="Reset Device" aria-label="Reset device binding">📱</button>
+        <button class="s-btn" onclick="waStudent('${s.key}','${s.name}','${s.phone||''}')" title="WhatsApp" aria-label="Send WhatsApp message">💬</button>
+        <button class="s-btn" onclick="deleteStudent('${s.id}','${s.name}')" title="Delete" aria-label="Delete student">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -575,12 +581,14 @@ function resetDevice(id){
 
 function waStudent(key,name,phone){
   const msg=`Hi ${name}! Your Lumiq CBT key: *${key}*`;
-  const num=(phone||'').replace(/\D/g,'');
-  window.open(num?`https://wa.me/234${num.replace(/^0/,'')}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+  let num=(phone||'').replace(/\D/g,'');
+  if(num.startsWith('234')) num=num.slice(3);
+  if(num.startsWith('0')) num=num.slice(1);
+  window.open(num?`https://wa.me/234${num}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 // ══ COURSES & QUESTIONS ══
-let allQuestions=[], allCourses=[], coursesListener=null, questionsListener=null;
+let allQuestions=[], allCourses=[], coursesListener=null, questionsListener=null, _orphanIds=[];
 
 function loadCourses() {
   allCourses = [...CBT_COURSES];
@@ -674,7 +682,8 @@ async function resetStatsForNewMonth(){
       if(d.active!==false) active++;
       if(d.plan==='semester') revenue+=6500;
       else if(d.plan==='monthly'||d.plan==='quarterly') revenue+=2500;
-      else if(d.plan==='yearly') revenue+=20000;
+      else if(d.plan==='month') revenue+=800;
+      else if(d.plan==='yearly'||d.plan==='Yearly') revenue+=20000;
     });
     const qSnap=await db.ref('questions').once('value');
     const monthKey=getCurrentMonthKey();
@@ -728,94 +737,100 @@ async function runHealthCheck(){
   const resultEl=document.getElementById('health-result');
   const bdEl=document.getElementById('health-q-breakdown');
   resultEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">Checking Firebase...</div>';
-  
-  const snap=await db.ref('questions').once('value');
-  const counts={};
-  snap.forEach(child=>{
-    const s=child.val().subject||'Unknown';
-    counts[s]=(counts[s]||0)+1;
-  });
+  try{
+    const snap=await db.ref('questions').once('value');
+    const counts={};
+    snap.forEach(child=>{
+      const s=child.val().subject||'Unknown';
+      counts[s]=(counts[s]||0)+1;
+    });
 
-  const validNames=new Set(CBT_COURSES.map(c=>c.name));
-  const orphans=Object.entries(counts).filter(([name])=>!validNames.has(name));
-  const missing=CBT_COURSES.filter(c=>!counts[c.name]);
-  const low=CBT_COURSES.filter(c=>(counts[c.name]||0)<10 && (counts[c.name]||0)>0);
+    const validNames=new Set(CBT_COURSES.map(c=>c.name));
+    const orphans=Object.entries(counts).filter(([name])=>!validNames.has(name));
+    const missing=CBT_COURSES.filter(c=>!counts[c.name]);
+    const low=CBT_COURSES.filter(c=>(counts[c.name]||0)<10 && (counts[c.name]||0)>0);
 
-  // Health result
-  let html='';
-  if(orphans.length){
-    html+=`<div class="alert alert-red">⚠️ <strong>${orphans.length} mismatched course name(s) found</strong> — questions under these names are INVISIBLE to students:<br><br>`
-      +orphans.map(([name,cnt])=>`<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}" (${cnt} questions)</span>`).join('<br>')+`</div>`;
-  }
-  if(missing.length){
-    html+=`<div class="alert alert-yellow">📭 <strong>${missing.length} course(s) have zero questions</strong>:<br><br>`
-      +missing.map(c=>`${c.icon} ${c.name}`).join('<br>')+`</div>`;
-  }
-  if(low.length){
-    html+=`<div class="alert alert-yellow">📉 <strong>${low.length} course(s) have fewer than 10 questions</strong> (not enough for a good exam):<br><br>`
-      +low.map(c=>`${c.icon} ${c.name}: ${counts[c.name]||0} questions`).join('<br>')+`</div>`;
-  }
-  if(!orphans.length && !missing.length && !low.length){
-    html=`<div class="alert alert-green">✅ All courses look healthy! Every course has questions and all names match.</div>`;
-  }
-  resultEl.innerHTML=html;
+    // Health result
+    let html='';
+    if(orphans.length){
+      html+=`<div class="alert alert-red">⚠️ <strong>${orphans.length} mismatched course name(s) found</strong> — questions under these names are INVISIBLE to students:<br><br>`
+        +orphans.map(([name,cnt])=>`<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}" (${cnt} questions)</span>`).join('<br>')+`</div>`;
+    }
+    if(missing.length){
+      html+=`<div class="alert alert-yellow">📭 <strong>${missing.length} course(s) have zero questions</strong>:<br><br>`
+        +missing.map(c=>`${c.icon} ${c.name}`).join('<br>')+`</div>`;
+    }
+    if(low.length){
+      html+=`<div class="alert alert-yellow">📉 <strong>${low.length} course(s) have fewer than 10 questions</strong> (not enough for a good exam):<br><br>`
+        +low.map(c=>`${c.icon} ${c.name}: ${counts[c.name]||0} questions`).join('<br>')+`</div>`;
+    }
+    if(!orphans.length && !missing.length && !low.length){
+      html=`<div class="alert alert-green">✅ All courses look healthy! Every course has questions and all names match.</div>`;
+    }
+    resultEl.innerHTML=html;
 
-  // Per-course breakdown with bars
-  const maxCount=Math.max(...CBT_COURSES.map(c=>counts[c.name]||0),1);
-  bdEl.innerHTML=CBT_COURSES.map(c=>{
-    const count=counts[c.name]||0;
-    const pct=Math.round((count/maxCount)*100);
-    const color=count===0?'#f87171':count<10?'#fbbf24':'#4ade80';
-    return `<div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;color:rgba(255,255,255,0.75)">${c.icon} ${c.name}</span>
-        <span style="font-size:12px;font-weight:700;color:${color};font-family:'DM Mono',monospace">${count}</span>
-      </div>
-      <div class="health-bar"><div class="health-fill" style="width:${pct}%;background:${color}"></div></div>
-    </div>`;
-  }).join('');
+    // Per-course breakdown with bars
+    const maxCount=Math.max(...CBT_COURSES.map(c=>counts[c.name]||0),20);
+    bdEl.innerHTML=CBT_COURSES.map(c=>{
+      const count=counts[c.name]||0;
+      const pct=Math.round((count/maxCount)*100);
+      const color=count===0?'#f87171':count<10?'#fbbf24':'#4ade80';
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:rgba(255,255,255,0.75)">${c.icon} ${c.name}</span>
+          <span style="font-size:12px;font-weight:700;color:${color};font-family:'DM Mono',monospace">${count}</span>
+        </div>
+        <div class="health-bar"><div class="health-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }catch(e){ resultEl.innerHTML=`<div class="alert alert-red">❌ Firebase error: ${e.message}</div>`; }
 }
 
 async function findOrphans(){
   const resultEl=document.getElementById('orphan-result');
   resultEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">Scanning Firebase...</div>';
+  try{
+    const snap=await db.ref('questions').once('value');
+    const validNames=new Set(CBT_COURSES.map(c=>c.name));
+    const orphanIds=[];
+    const orphanBySubject={};
 
-  const snap=await db.ref('questions').once('value');
-  const validNames=new Set(CBT_COURSES.map(c=>c.name));
-  const orphanIds=[];
-  const orphanBySubject={};
+    snap.forEach(child=>{
+      const d=child.val();
+      const subj=d.subject||'Unknown';
+      if(!validNames.has(subj)){
+        orphanIds.push(child.key);
+        orphanBySubject[subj]=(orphanBySubject[subj]||0)+1;
+      }
+    });
 
-  snap.forEach(child=>{
-    const d=child.val();
-    const subj=d.subject||'Unknown';
-    if(!validNames.has(subj)){
-      orphanIds.push(child.key);
-      orphanBySubject[subj]=(orphanBySubject[subj]||0)+1;
+    if(!orphanIds.length){
+      resultEl.innerHTML='<div class="alert alert-green">✅ No orphan questions found. All questions are under valid course names.</div>';
+      return;
     }
-  });
 
-  if(!orphanIds.length){
-    resultEl.innerHTML='<div class="alert alert-green">✅ No orphan questions found. All questions are under valid course names.</div>';
-    return;
-  }
-
+  _orphanIds=orphanIds;
   resultEl.innerHTML=`
     <div class="alert alert-red">
       ⚠️ Found <strong>${orphanIds.length} orphan questions</strong> under invalid course names:<br><br>
       ${Object.entries(orphanBySubject).map(([name,cnt])=>`<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}": ${cnt} questions</span>`).join('<br>')}
     </div>
-    <button class="btn btn-red" onclick="deleteOrphans(${JSON.stringify(orphanIds).replace(/"/g,'&quot;')})" style="width:100%;justify-content:center;margin-top:8px">
+    <button class="btn btn-red" onclick="deleteOrphans()" style="width:100%;justify-content:center;margin-top:8px">
       🗑 Delete All ${orphanIds.length} Orphan Questions
     </button>`;
+  }catch(e){ resultEl.innerHTML=`<div class="alert alert-red">❌ Firebase error: ${e.message}</div>`; }
 }
 
-async function deleteOrphans(ids){
+async function deleteOrphans(){
+  const ids=_orphanIds;
+  if(!ids||!ids.length){ toast('No orphans to delete'); return; }
   if(!confirm(`Permanently delete ${ids.length} orphan questions?\n\nThis cannot be undone.`)) return;
   const btn=event.target; btn.disabled=true; btn.textContent='Deleting...';
   let deleted=0;
   for(const id of ids){
     try{ await db.ref('questions/'+id).remove(); deleted++; }catch(e){}
   }
+  _orphanIds=[];
   document.getElementById('orphan-result').innerHTML=`<div class="alert alert-green">✅ Deleted ${deleted} orphan questions.</div>`;
   loadStats();
   toast(`✅ Deleted ${deleted} orphan questions`);
@@ -853,7 +868,7 @@ function previewBulk(){
         <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:4px">Q${i+1}</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.9);margin-bottom:6px">${q.q}</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.4)">${q.options.map((o,j)=>'ABCD'[j]+'. '+o).join(' · ')}</div>
-        <div style="font-size:11px;color:#4ade80;margin-top:4px">✅ Answer: ${'ABCD'[q.answer]}</div>
+        <div style="font-size:11px;color:${q.answer===-1?'#f87171':'#4ade80'};margin-top:4px">${q.answer===-1?'⚠️ Answer not detected — will be set to "A" by default':'✅ Answer: '+'ABCD'[q.answer]}</div>
       </div>`).join('')}
     ${_bulkParsed.length>3?`<div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:8px">...and ${_bulkParsed.length-3} more</div>`:''}`;
 
@@ -893,17 +908,18 @@ function parseBulkQuestions(text){
     if(!qText) continue;
     const opts=['','','',''];
     const optMap={a:0,b:1,c:2,d:3};
-    let answer=0,explanation='';
+    let answer=0,explanation='',answerFound=false;
     for(let i=1;i<lines.length;i++){
       const line=lines[i];
       const optMatch=line.match(/^([A-Da-d])[\.\:\)]\s*(.+)/);
       if(optMatch){ const idx=optMap[optMatch[1].toLowerCase()]; if(idx!==undefined&&!opts[idx]) opts[idx]=optMatch[2].trim(); continue; }
       const ansMatch=line.match(/^(?:Ans(?:wer)?|Correct)[\.\:\)]?\s*([A-Da-d])/i);
-      if(ansMatch){ answer=optMap[ansMatch[1].toLowerCase()]||0; continue; }
+      if(ansMatch){ answer=optMap[ansMatch[1].toLowerCase()]||0; answerFound=true; continue; }
       const explMatch=line.match(/^Expl(?:anation)?[\.\:\)]?\s*(.+)/i);
       if(explMatch){ explanation=explMatch[1].trim(); continue; }
       if(explanation&&!line.match(/^[A-Da-d][\.\:\)]/)&&!line.match(/^(?:Ans|Correct|Expl)/i)) explanation+=' '+line;
     }
+    if(!answerFound) answer=-1;
     if(qText&&opts.filter(o=>o).length>=2){
       for(let i=0;i<4;i++) if(!opts[i]) opts[i]='(No option '+'ABCD'[i]+')';
       questions.push({q:qText,options:opts,answer,explanation:explanation||'See your notes for explanation.'});
@@ -938,21 +954,25 @@ async function saveBulk(){
 }
 
 // ══ ADMIN CHAT ══
-let _adminMsgs={}, chatListener=null, _longPressTimer=null;
+let _adminMsgs={}, chatListener=null, _longPressTimer=null, _chatAddedHandler=null, _chatRemovedHandler=null;
 
 function initAdminChat(){
   _adminMsgs={};
-  if(chatListener) chatListener.off();
+  if(chatListener&&_chatAddedHandler) chatListener.off('child_added',_chatAddedHandler);
+  if(chatListener&&_chatRemovedHandler) chatListener.off('child_removed',_chatRemovedHandler);
+  chatListener=null; _chatAddedHandler=null; _chatRemovedHandler=null;
   const chatRef=db.ref('chat');
   chatRef.orderByChild('ts').limitToLast(50).once('value',snap=>{
     snap.forEach(child=>{ _adminMsgs[child.key]={id:child.key,...child.val()}; });
     renderAdminChat();
   });
   chatListener=chatRef.orderByChild('ts').startAt(Date.now());
-  chatListener.on('child_added',snap=>{
+  _chatAddedHandler=snap=>{
     if(!_adminMsgs[snap.key]){ _adminMsgs[snap.key]={id:snap.key,...snap.val()}; renderAdminChat(); }
-  });
-  chatListener.on('child_removed',snap=>{ delete _adminMsgs[snap.key]; renderAdminChat(); });
+  };
+  _chatRemovedHandler=snap=>{ delete _adminMsgs[snap.key]; renderAdminChat(); };
+  chatListener.on('child_added',_chatAddedHandler);
+  chatListener.on('child_removed',_chatRemovedHandler);
 }
 
 function renderAdminChat(){
@@ -1030,7 +1050,9 @@ function stopAllListeners(){
   if(studentsListener){ studentsListener.off(); studentsListener=null; }
   if(coursesListener){ coursesListener.off(); coursesListener=null; }
   if(questionsListener){ questionsListener.off(); questionsListener=null; }
-  if(chatListener){ chatListener.off(); chatListener=null; }
+  if(chatListener&&_chatAddedHandler){ chatListener.off('child_added',_chatAddedHandler); }
+  if(chatListener&&_chatRemovedHandler){ chatListener.off('child_removed',_chatRemovedHandler); }
+  chatListener=null; _chatAddedHandler=null; _chatRemovedHandler=null;
 }
 
 // ══ TOAST ══
