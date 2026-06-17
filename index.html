@@ -300,15 +300,70 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 
   <!-- ═══ BULK IMPORT TAB ═══ -->
   <div class="tab-panel" id="tab-bulk">
+
+    <!-- Manage Departments -->
+    <div class="card">
+      <div class="card-title">🏫 Departments</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:12px;line-height:1.6">
+        Create departments here. Students pick their department during setup.
+      </div>
+      <div id="dept-list" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input class="field" id="new-dept-input" placeholder="e.g. Marketing, Accountancy..." style="margin:0;flex:1">
+        <button class="btn btn-green" onclick="createDept()" style="flex-shrink:0">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Bulk Import Questions -->
     <div class="card">
       <div class="card-title">⚡ Bulk Import Questions</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:14px;line-height:1.7">
         Paste questions from any AI. Use <span style="color:rgba(255,255,255,0.65)">Q1.</span> for question · <span style="color:rgba(255,255,255,0.65)">A)</span> for options · <span style="color:rgba(255,255,255,0.65)">Answer: A</span> for correct answer
       </div>
-      <select class="field" id="bulk-subject" style="margin-bottom:10px">
-        <option value="">-- Select Course --</option>
+
+      <!-- Step 1: Department -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 1 — SELECT DEPARTMENT</div>
+      <select class="field" id="bulk-dept" onchange="onBulkDeptChange()" style="margin-bottom:14px">
+        <option value="">-- Select Department --</option>
       </select>
-      <textarea class="field" id="bulk-input" placeholder="Paste your questions here...
+
+      <!-- Step 2: Course (shown after dept) -->
+      <div id="bulk-course-section" style="display:none">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 2 — SELECT COURSE</div>
+        <select class="field" id="bulk-course-select" onchange="onBulkCourseChange()" style="margin-bottom:10px">
+          <option value="">-- Select Course --</option>
+          <option value="__new__">➕ Create new course...</option>
+        </select>
+
+        <!-- New course creator -->
+        <div id="bulk-new-course-box" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">NEW COURSE</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input class="field" id="bulk-new-course-name" placeholder="Course name..." style="margin:0;flex:1">
+            <select class="field" id="bulk-new-course-icon" style="margin:0;width:60px">
+              <option>📊</option><option>💼</option><option>🏛️</option><option>🧠</option>
+              <option>📒</option><option>⚖️</option><option>💻</option><option>📖</option>
+              <option>🔢</option><option>🔬</option><option>📐</option><option>🌍</option>
+              <option>🎯</option><option>📝</option><option>⚡</option><option>🧪</option>
+            </select>
+          </div>
+          <button class="btn btn-green" onclick="saveNewCourse()" style="width:100%;justify-content:center">✅ Save Course</button>
+          <div id="new-course-status" style="font-size:12px;margin-top:6px;color:rgba(255,255,255,0.5)"></div>
+        </div>
+      </div>
+
+      <!-- Step 3: Topic (shown after course) -->
+      <div id="bulk-topic-section" style="display:none">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 3 — TOPIC</div>
+        <select class="field" id="bulk-topic-select" onchange="onBulkTopicChange()" style="margin-bottom:8px">
+          <option value="">-- Select existing topic --</option>
+          <option value="__new__">✏️ Type new topic...</option>
+        </select>
+        <input class="field" id="bulk-topic-input" placeholder="📌 Type topic name..." style="margin-bottom:14px;display:none">
+
+        <!-- Step 4: Questions -->
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 4 — PASTE QUESTIONS</div>
+        <textarea class="field" id="bulk-input" placeholder="Paste your questions here...
 
 Example:
 Q1. What is the accounting equation?
@@ -318,44 +373,44 @@ C. Equity = Assets + Liabilities
 D. None of the above
 Answer: A
 Explanation: The accounting equation must always balance." rows="12" style="min-height:200px;font-size:13px;font-family:monospace;line-height:1.6"></textarea>
-      <div id="bulk-preview" style="display:none;margin-top:12px;max-height:400px;overflow-y:auto"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn btn-blue" onclick="previewBulk()" style="flex:1">👁 Preview</button>
-        <button class="btn btn-green" id="bulk-save-btn" onclick="saveBulk()" style="flex:1;display:none">✅ Save All</button>
+        <div id="bulk-preview" style="display:none;margin-top:12px;max-height:400px;overflow-y:auto"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-blue" onclick="previewBulk()" style="flex:1">👁 Preview</button>
+          <button class="btn btn-green" id="bulk-save-btn" onclick="saveBulk()" style="flex:1;display:none">✅ Save All</button>
+        </div>
+        <div id="bulk-status" style="margin-top:10px;font-size:13px;color:rgba(255,255,255,0.6)"></div>
       </div>
-      <div id="bulk-status" style="margin-top:10px;font-size:13px;color:rgba(255,255,255,0.6)"></div>
     </div>
   </div>
 
   <!-- ═══ HEALTH TAB ═══ -->
   <div class="tab-panel" id="tab-health">
 
-    <!-- Course Name Mismatch Warning -->
+    <!-- Departments & Courses from Firebase -->
     <div class="card">
-      <div class="card-title">🩺 Course Name Sync Check</div>
+      <div class="card-title">🩺 Departments & Courses in Firebase</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:12px;line-height:1.6">
-        These are the <strong style="color:#fff">9 exact course names</strong> used in the CBT student app. Questions MUST be saved under these exact names or students won't see them.
+        These are the departments and courses currently saved in Firebase. Questions must be saved under exact course names.
       </div>
-      <!-- The 9 exact course names from the CBT app -->
+      <button class="btn btn-blue" onclick="runHealthCheck()" style="width:100%;justify-content:center;margin-bottom:12px">🔍 Load from Firebase</button>
       <div id="health-course-list"></div>
-      <button class="btn btn-blue" onclick="runHealthCheck()" style="width:100%;justify-content:center;margin-top:12px">🔍 Check for Mismatches in Firebase</button>
       <div id="health-result" style="margin-top:12px"></div>
     </div>
 
     <!-- Questions per Course -->
     <div class="card">
       <div class="card-title">📊 Questions per Course</div>
-      <div id="health-q-breakdown" style="font-size:12px;color:rgba(255,255,255,0.45)">Click "Check for Mismatches" above to load...</div>
+      <div id="health-q-breakdown" style="font-size:12px;color:rgba(255,255,255,0.45)">Click "Load from Firebase" above to load...</div>
     </div>
 
-    <!-- Delete Orphan Questions -->
+    <!-- Nuke Everything -->
     <div class="card">
-      <div class="card-title">🗑 Orphan Question Cleaner</div>
+      <div class="card-title">🗑 Clear All Questions & Courses</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;line-height:1.6">
-        Orphan questions are saved under a course name that doesn't exist in the CBT app — students can never see them. You can find and delete them here.
+        Deletes ALL questions and ALL department/course data from Firebase. Use this to start fresh with a clean slate.
       </div>
-      <button class="btn btn-red" onclick="findOrphans()" style="width:100%;justify-content:center">🔎 Find Orphan Questions</button>
-      <div id="orphan-result" style="margin-top:12px"></div>
+      <button class="btn btn-red" onclick="nukeAllData()" style="width:100%;justify-content:center">🔥 Delete Everything (Questions + Depts)</button>
+      <div id="nuke-result" style="margin-top:12px"></div>
     </div>
   </div>
 
@@ -375,23 +430,7 @@ Explanation: The accounting equation must always balance." rows="12" style="min-
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-//  CRITICAL: These MUST match the CBT student app exactly
-//  CBT app file: lumiq_updated.html → Marketing department
-// ══════════════════════════════════════════════════════
-const CBT_COURSES = [
-  { icon: '📊', name: 'Principles of Economics' },   // ✅ exact match
-  { icon: '💼', name: 'Introduction to Business' },   // ✅ exact match
-  { icon: '🏛️', name: 'Citizenship Education' },      // ✅ exact match
-  { icon: '🧠', name: 'Psychology' },                  // ✅ exact match
-  { icon: '📒', name: 'Principles of Accounting' },   // ✅ exact match
-  { icon: '⚖️', name: 'Principles of Law' },          // ✅ exact match
-  { icon: '💻', name: 'Computer' },                    // ✅ exact match
-  { icon: '📖', name: 'English' },                     // ✅ exact match
-  { icon: '🔢', name: 'Business Mathematics' },        // ✅ exact match
-];
-// NOTE: "Marketing" as a course name does NOT exist in the CBT app.
-//       "Marketing" is the DEPARTMENT name. The 9 courses above are what students see.
+
 
 const ADMIN_PASSWORD = 'Quartiz@gmail1';
 
@@ -481,7 +520,7 @@ function switchTab(name) {
   document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('on');
   if(name==='chat') setTimeout(()=>{ const el=document.getElementById('admin-chat-msgs'); if(el) el.scrollTop=el.scrollHeight; },100);
   if(name==='health') renderHealthCourseList();
-  if(name==='bulk') updateCourseSelects();
+  if(name==='bulk') loadDeptDropdown();
   if(name==='students') loadAnalytics();
 }
 
@@ -625,30 +664,186 @@ function waStudent(key,name,phone){
   window.open(num?`https://wa.me/234${num}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
-// ══ COURSES & QUESTIONS ══
-let allQuestions=[], allCourses=[], coursesListener=null, questionsListener=null, _orphanIds=[];
+// ══ DEPARTMENTS & COURSES (Firebase-driven) ══
+let allQuestions = [], questionsListener = null;
 
-function loadCourses() {
-  allCourses = [...CBT_COURSES];
-  // Small delay ensures hidden tab selects are in the DOM before populating
-  setTimeout(updateCourseSelects, 100);
+// Flatten icon map from Firebase dept/course data
+const COURSE_ICON_MAP = {};
+
+// ── Load departments list into the bulk-dept dropdown ──
+function loadDeptDropdown() {
+  db.ref('departments').once('value').then(snap => {
+    const depts = [];
+    snap.forEach(child => depts.push(child.key));
+    renderDeptList(depts);
+    populateBulkDeptSelect(depts);
+  });
 }
 
-function updateCourseSelects() {
-  const bulkOpts = '<option value="">-- Select Course --</option>'
-    + CBT_COURSES.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
-  const bulkSel=document.getElementById('bulk-subject');
-  if(bulkSel) bulkSel.innerHTML=bulkOpts;
+function renderDeptList(depts) {
+  const el = document.getElementById('dept-list');
+  if (!el) return;
+  if (!depts.length) { el.innerHTML = '<div class="empty" style="padding:8px 0;font-size:12px">No departments yet.</div>'; return; }
+  el.innerHTML = depts.map(d => `
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:9px 12px;margin-bottom:6px">
+      <span style="flex:1;font-size:13px;font-weight:700;color:#fff">🏫 ${d}</span>
+      <button class="btn btn-red btn-sm" onclick="deleteDept('${d}')">Delete</button>
+    </div>`).join('');
+}
+
+function populateBulkDeptSelect(depts) {
+  const sel = document.getElementById('bulk-dept');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Select Department --</option>'
+    + depts.map(d => `<option value="${d}"${d===cur?' selected':''}>${d}</option>`).join('');
+}
+
+async function createDept() {
+  const inp = document.getElementById('new-dept-input');
+  const name = (inp.value || '').trim();
+  if (!name) { toast('Enter department name'); return; }
+  try { await ensureFirebaseAuth(); } catch(e) { toast('Auth error: '+e.message); return; }
+  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  await db.ref('departments/' + key).update({ name, created: Date.now() });
+  inp.value = '';
+  toast('✅ Department "' + name + '" created!');
+  loadDeptDropdown();
+}
+
+async function deleteDept(key) {
+  if (!confirm('Delete department "' + key + '" and all its courses? Questions are NOT deleted.')) return;
+  try { await ensureFirebaseAuth(); } catch(e) { toast('Auth error: '+e.message); return; }
+  await db.ref('departments/' + key).remove();
+  toast('Deleted');
+  loadDeptDropdown();
+}
+
+// ── Bulk Import: dept → course → topic flow ──
+
+function onBulkDeptChange() {
+  const dept = document.getElementById('bulk-dept').value;
+  const courseSection = document.getElementById('bulk-course-section');
+  const topicSection = document.getElementById('bulk-topic-section');
+  const newCourseBox = document.getElementById('bulk-new-course-box');
+  courseSection.style.display = dept ? 'block' : 'none';
+  topicSection.style.display = 'none';
+  newCourseBox.style.display = 'none';
+  document.getElementById('bulk-topic-section').style.display = 'none';
+  if (!dept) return;
+  loadCoursesForDept(dept);
+}
+
+function loadCoursesForDept(dept) {
+  const sel = document.getElementById('bulk-course-select');
+  sel.innerHTML = '<option value="">-- Select Course --</option><option value="__new__">➕ Create new course...</option>';
+  db.ref('departments/' + dept + '/courses').once('value').then(snap => {
+    snap.forEach(child => {
+      const c = child.val();
+      const opt = document.createElement('option');
+      opt.value = child.key;
+      opt.textContent = (c.icon || '📚') + ' ' + (c.name || child.key);
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function onBulkCourseChange() {
+  const val = document.getElementById('bulk-course-select').value;
+  const newBox = document.getElementById('bulk-new-course-box');
+  const topicSection = document.getElementById('bulk-topic-section');
+  if (val === '__new__') {
+    newBox.style.display = 'block';
+    topicSection.style.display = 'none';
+  } else if (val) {
+    newBox.style.display = 'none';
+    topicSection.style.display = 'block';
+    loadTopicsForCourse(val);
+  } else {
+    newBox.style.display = 'none';
+    topicSection.style.display = 'none';
+  }
+}
+
+function loadTopicsForCourse(courseKey) {
+  const dept = document.getElementById('bulk-dept').value;
+  const sel = document.getElementById('bulk-topic-select');
+  sel.innerHTML = '<option value="">-- Select existing topic --</option><option value="__new__">✏️ Type new topic...</option>';
+  document.getElementById('bulk-topic-input').style.display = 'none';
+  if (!dept || !courseKey) return;
+  db.ref('departments/' + dept + '/courses/' + courseKey + '/topics').once('value').then(snap => {
+    snap.forEach(child => {
+      const opt = document.createElement('option');
+      opt.value = child.key;
+      opt.textContent = child.val().name || child.key;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function onBulkTopicChange() {
+  const val = document.getElementById('bulk-topic-select').value;
+  const inp = document.getElementById('bulk-topic-input');
+  inp.style.display = val === '__new__' ? 'block' : 'none';
+  if (val === '__new__') inp.focus();
+}
+
+async function saveNewCourse() {
+  const dept = document.getElementById('bulk-dept').value;
+  const name = (document.getElementById('bulk-new-course-name').value || '').trim();
+  const icon = document.getElementById('bulk-new-course-icon').value || '📚';
+  const statusEl = document.getElementById('new-course-status');
+  if (!dept || !name) { statusEl.textContent = 'Select a department and enter a course name.'; return; }
+  try { await ensureFirebaseAuth(); } catch(e) { statusEl.textContent = 'Auth error: '+e.message; return; }
+  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  await db.ref('departments/' + dept + '/courses/' + key).set({ name, icon, created: Date.now() });
+  COURSE_ICON_MAP[name] = icon;
+  statusEl.innerHTML = '<span style="color:#4ade80">✅ Course saved! Select it from the dropdown.</span>';
+  document.getElementById('bulk-new-course-name').value = '';
+  loadCoursesForDept(dept);
+  // pre-select the new course
+  setTimeout(() => {
+    const sel = document.getElementById('bulk-course-select');
+    sel.value = key;
+    onBulkCourseChange();
+  }, 600);
+}
+
+function loadCourses() {
+  loadDeptDropdown();
 }
 
 function loadQuestions() {
-  if(questionsListener) questionsListener.off();
+  if (questionsListener) questionsListener.off();
   questionsListener = db.ref('questions');
-  questionsListener.on('value', snap=>{
-    allQuestions=[];
-    snap.forEach(child=>allQuestions.push({id:child.key,...child.val()}));
-    allQuestions.sort((a,b)=>(b.created||0)-(a.created||0));
+  questionsListener.on('value', snap => {
+    allQuestions = [];
+    snap.forEach(child => allQuestions.push({ id: child.key, ...child.val() }));
+    allQuestions.sort((a, b) => (b.created || 0) - (a.created || 0));
   });
+}
+
+// Helper: get selected course info
+function getSelectedCourseInfo() {
+  const deptKey = document.getElementById('bulk-dept').value;
+  const courseKey = document.getElementById('bulk-course-select').value;
+  if (!deptKey || !courseKey || courseKey === '__new__') return null;
+  return { deptKey, courseKey };
+}
+
+function getTopicValue() {
+  const sel = document.getElementById('bulk-topic-select');
+  if (!sel) return '';
+  if (sel.value === '__new__') return (document.getElementById('bulk-topic-input').value || '').trim();
+  if (sel.value) return sel.value; // key; we'll store its name
+  return '';
+}
+
+async function saveTopicIfNew(deptKey, courseKey, topicName) {
+  if (!topicName) return;
+  const topicKey = topicName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  await db.ref('departments/' + deptKey + '/courses/' + courseKey + '/topics/' + topicKey).set({ name: topicName, created: Date.now() });
+  return topicKey;
 }
 
 // ══ STATS ══
@@ -760,59 +955,79 @@ function loadPreviousMonths(){
 }
 
 // ══ HEALTH TAB ══
-function renderHealthCourseList(){
-  const el=document.getElementById('health-course-list');
-  if(!el) return;
-  el.innerHTML=CBT_COURSES.map(c=>`
-    <div style="display:flex;align-items:center;gap:10px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);border-radius:10px;padding:10px 12px;margin-bottom:6px">
-      <span style="font-size:18px">${c.icon}</span>
-      <span style="flex:1;font-size:13px;color:rgba(255,255,255,0.85);font-family:'DM Mono',monospace">${c.name}</span>
-      <span style="font-size:10px;color:#4ade80;font-weight:700">✅ VALID</span>
-    </div>`).join('');
-}
+async function runHealthCheck() {
+  const listEl = document.getElementById('health-course-list');
+  const resultEl = document.getElementById('health-result');
+  const bdEl = document.getElementById('health-q-breakdown');
+  listEl.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.5)">Loading departments from Firebase...</div>';
+  resultEl.innerHTML = '';
+  bdEl.innerHTML = '';
 
-async function runHealthCheck(){
-  const resultEl=document.getElementById('health-result');
-  const bdEl=document.getElementById('health-q-breakdown');
-  resultEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">Checking Firebase...</div>';
-  try{
-    const snap=await db.ref('questions').once('value');
-    const counts={};
-    snap.forEach(child=>{
-      const s=child.val().subject||'Unknown';
-      counts[s]=(counts[s]||0)+1;
+  try {
+    // Load departments & courses from Firebase
+    const deptSnap = await db.ref('departments').once('value');
+    const allCourseNames = [];
+    const allCourseDefs = []; // {name, icon, dept}
+
+    deptSnap.forEach(deptChild => {
+      const deptName = deptChild.val().name || deptChild.key;
+      const courses = deptChild.child('courses');
+      courses.forEach(courseChild => {
+        const c = courseChild.val();
+        allCourseDefs.push({ name: c.name || courseChild.key, icon: c.icon || '📚', dept: deptName });
+        allCourseNames.push(c.name || courseChild.key);
+      });
     });
 
-    const validNames=new Set(CBT_COURSES.map(c=>c.name));
-    const orphans=Object.entries(counts).filter(([name])=>!validNames.has(name));
-    const missing=CBT_COURSES.filter(c=>!counts[c.name]);
-    const low=CBT_COURSES.filter(c=>(counts[c.name]||0)<10 && (counts[c.name]||0)>0);
+    if (!allCourseDefs.length) {
+      listEl.innerHTML = '<div class="alert alert-yellow">No departments or courses found in Firebase. Go to Bulk Import to create some.</div>';
+      return;
+    }
 
-    // Health result
-    let html='';
-    if(orphans.length){
-      html+=`<div class="alert alert-red">⚠️ <strong>${orphans.length} mismatched course name(s) found</strong> — questions under these names are INVISIBLE to students:<br><br>`
-        +orphans.map(([name,cnt])=>`<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}" (${cnt} questions)</span>`).join('<br>')+`</div>`;
-    }
-    if(missing.length){
-      html+=`<div class="alert alert-yellow">📭 <strong>${missing.length} course(s) have zero questions</strong>:<br><br>`
-        +missing.map(c=>`${c.icon} ${c.name}`).join('<br>')+`</div>`;
-    }
-    if(low.length){
-      html+=`<div class="alert alert-yellow">📉 <strong>${low.length} course(s) have fewer than 10 questions</strong> (not enough for a good exam):<br><br>`
-        +low.map(c=>`${c.icon} ${c.name}: ${counts[c.name]||0} questions`).join('<br>')+`</div>`;
-    }
-    if(!orphans.length && !missing.length && !low.length){
-      html=`<div class="alert alert-green">✅ All courses look healthy! Every course has questions and all names match.</div>`;
-    }
-    resultEl.innerHTML=html;
+    listEl.innerHTML = allCourseDefs.map(c => `
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);border-radius:10px;padding:10px 12px;margin-bottom:6px">
+        <span style="font-size:18px">${c.icon}</span>
+        <span style="flex:1;font-size:13px;color:rgba(255,255,255,0.85);font-family:'DM Mono',monospace">${c.name}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.35)">${c.dept}</span>
+        <span style="font-size:10px;color:#4ade80;font-weight:700">✅ VALID</span>
+      </div>`).join('');
 
-    // Per-course breakdown with bars
-    const maxCount=Math.max(...CBT_COURSES.map(c=>counts[c.name]||0),20);
-    bdEl.innerHTML=CBT_COURSES.map(c=>{
-      const count=counts[c.name]||0;
-      const pct=Math.round((count/maxCount)*100);
-      const color=count===0?'#f87171':count<10?'#fbbf24':'#4ade80';
+    // Count questions per course
+    const qSnap = await db.ref('questions').once('value');
+    const counts = {};
+    qSnap.forEach(child => {
+      const s = child.val().subject || 'Unknown';
+      counts[s] = (counts[s] || 0) + 1;
+    });
+
+    const validSet = new Set(allCourseNames);
+    const orphans = Object.entries(counts).filter(([name]) => !validSet.has(name));
+    const missing = allCourseDefs.filter(c => !counts[c.name]);
+    const low = allCourseDefs.filter(c => (counts[c.name] || 0) < 10 && (counts[c.name] || 0) > 0);
+
+    let html = '';
+    if (orphans.length) {
+      html += `<div class="alert alert-red">⚠️ ${orphans.length} mismatched course name(s) — invisible to students:<br><br>`
+        + orphans.map(([name, cnt]) => `<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}" (${cnt} questions)</span>`).join('<br>') + '</div>';
+    }
+    if (missing.length) {
+      html += `<div class="alert alert-yellow">📭 ${missing.length} course(s) with zero questions:<br><br>`
+        + missing.map(c => `${c.icon} ${c.name}`).join('<br>') + '</div>';
+    }
+    if (low.length) {
+      html += `<div class="alert alert-yellow">📉 ${low.length} course(s) with fewer than 10 questions:<br><br>`
+        + low.map(c => `${c.icon} ${c.name}: ${counts[c.name] || 0}`).join('<br>') + '</div>';
+    }
+    if (!orphans.length && !missing.length && !low.length) {
+      html = '<div class="alert alert-green">✅ All courses look healthy!</div>';
+    }
+    resultEl.innerHTML = html;
+
+    const maxCount = Math.max(...allCourseDefs.map(c => counts[c.name] || 0), 20);
+    bdEl.innerHTML = allCourseDefs.map(c => {
+      const count = counts[c.name] || 0;
+      const pct = Math.round((count / maxCount) * 100);
+      const color = count === 0 ? '#f87171' : count < 10 ? '#fbbf24' : '#4ade80';
       return `<div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
           <span style="font-size:12px;color:rgba(255,255,255,0.75)">${c.icon} ${c.name}</span>
@@ -821,158 +1036,97 @@ async function runHealthCheck(){
         <div class="health-bar"><div class="health-fill" style="width:${pct}%;background:${color}"></div></div>
       </div>`;
     }).join('');
-  }catch(e){ resultEl.innerHTML=`<div class="alert alert-red">❌ Firebase error: ${e.message}</div>`; }
+
+  } catch(e) { listEl.innerHTML = `<div class="alert alert-red">❌ Firebase error: ${e.message}</div>`; }
 }
 
-async function findOrphans(){
-  const resultEl=document.getElementById('orphan-result');
-  resultEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">Scanning Firebase...</div>';
-  try{
-    const snap=await db.ref('questions').once('value');
-    const validNames=new Set(CBT_COURSES.map(c=>c.name));
-    const orphanIds=[];
-    const orphanBySubject={};
+async function nukeAllData() {
+  if (!confirm('⚠️ This will permanently delete ALL questions AND all departments/courses from Firebase.
 
-    snap.forEach(child=>{
-      const d=child.val();
-      const subj=d.subject||'Unknown';
-      if(!validNames.has(subj)){
-        orphanIds.push(child.key);
-        orphanBySubject[subj]=(orphanBySubject[subj]||0)+1;
-      }
-    });
+This CANNOT be undone.
 
-    if(!orphanIds.length){
-      resultEl.innerHTML='<div class="alert alert-green">✅ No orphan questions found. All questions are under valid course names.</div>';
-      return;
-    }
-
-  _orphanIds=orphanIds;
-  resultEl.innerHTML=`
-    <div class="alert alert-red">
-      ⚠️ Found <strong>${orphanIds.length} orphan questions</strong> under invalid course names:<br><br>
-      ${Object.entries(orphanBySubject).map(([name,cnt])=>`<span style="font-family:'DM Mono',monospace;font-size:11px">"${name}": ${cnt} questions</span>`).join('<br>')}
-    </div>
-    <button class="btn btn-red" onclick="deleteOrphans()" style="width:100%;justify-content:center;margin-top:8px">
-      🗑 Delete All ${orphanIds.length} Orphan Questions
-    </button>`;
-  }catch(e){ resultEl.innerHTML=`<div class="alert alert-red">❌ Firebase error: ${e.message}</div>`; }
-}
-
-async function deleteOrphans(){
-  const ids=_orphanIds;
-  if(!ids||!ids.length){ toast('No orphans to delete'); return; }
-  if(!confirm(`Permanently delete ${ids.length} orphan questions?\n\nThis cannot be undone.`)) return;
-  const btn=event.target; btn.disabled=true; btn.textContent='Deleting...';
-  let deleted=0;
-  for(const id of ids){
-    try{ await db.ref('questions/'+id).remove(); deleted++; }catch(e){}
-  }
-  _orphanIds=[];
-  document.getElementById('orphan-result').innerHTML=`<div class="alert alert-green">✅ Deleted ${deleted} orphan questions.</div>`;
-  loadStats();
-  toast(`✅ Deleted ${deleted} orphan questions`);
+Continue?')) return;
+  const el = document.getElementById('nuke-result');
+  el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.5)">Deleting...</div>';
+  try {
+    await ensureFirebaseAuth();
+    await db.ref('questions').remove();
+    await db.ref('departments').remove();
+    el.innerHTML = '<div class="alert alert-green">✅ All questions and departments deleted. Firebase is clean.</div>';
+    loadStats();
+    loadDeptDropdown();
+    toast('✅ All data deleted');
+  } catch(e) { el.innerHTML = `<div class="alert alert-red">❌ Error: ${e.message}</div>`; }
 }
 
 // ══ BULK IMPORT ══
-let _bulkParsed=[];
+let _bulkParsed = [];
 
-function previewBulk(){
-  const text=document.getElementById('bulk-input').value.trim();
-  const subj=document.getElementById('bulk-subject').value;
-  if(!subj){ toast('Select a course first'); return; }
-  if(!text){ toast('Paste some questions first'); return; }
+function previewBulk() {
+  const text = document.getElementById('bulk-input').value.trim();
+  const info = getSelectedCourseInfo();
+  if (!info) { toast('Select a department and course first'); return; }
+  if (!text) { toast('Paste some questions first'); return; }
 
-  _bulkParsed=parseBulkQuestions(text);
-  const preview=document.getElementById('bulk-preview');
-  const saveBtn=document.getElementById('bulk-save-btn');
-  const status=document.getElementById('bulk-status');
+  _bulkParsed = parseBulkQuestions(text);
+  const preview = document.getElementById('bulk-preview');
+  const saveBtn = document.getElementById('bulk-save-btn');
+  const status = document.getElementById('bulk-status');
 
-  if(!_bulkParsed.length){
-    preview.style.display='block';
-    preview.innerHTML='<div style="color:#f87171;padding:12px;background:rgba(239,68,68,0.1);border-radius:10px;font-size:13px">❌ No questions detected. Check your format.</div>';
-    saveBtn.style.display='none';
+  if (!_bulkParsed.length) {
+    preview.style.display = 'block';
+    preview.innerHTML = '<div style="color:#f87171;padding:12px;background:rgba(239,68,68,0.1);border-radius:10px;font-size:13px">❌ No questions detected. Check your format.</div>';
+    saveBtn.style.display = 'none';
     return;
   }
 
-  preview.style.display='block';
-  preview.innerHTML=`
+  preview.style.display = 'block';
+  preview.innerHTML = `
     <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px;margin-bottom:10px">
       <div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:4px">✅ ${_bulkParsed.length} questions detected</div>
       <div style="font-size:11px;color:rgba(255,255,255,0.5)">Preview of first 3:</div>
     </div>
-    ${_bulkParsed.slice(0,3).map((q,i)=>`
+    ${_bulkParsed.slice(0, 3).map((q, i) => `
       <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:4px">Q${i+1}</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.9);margin-bottom:6px">${q.q}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.4)">${q.options.map((o,j)=>'ABCD'[j]+'. '+o).join(' · ')}</div>
-        <div style="font-size:11px;color:${q.answer===-1?'#f87171':'#4ade80'};margin-top:4px">${q.answer===-1?'⚠️ Answer not detected — will be set to "A" by default':'✅ Answer: '+'ABCD'[q.answer]}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4)">${q.options.map((o, j) => 'ABCD'[j] + '. ' + o).join(' · ')}</div>
+        <div style="font-size:11px;color:${q.answer === -1 ? '#f87171' : '#4ade80'};margin-top:4px">${q.answer === -1 ? '⚠️ Answer not detected — will be set to "A" by default' : '✅ Answer: ' + 'ABCD'[q.answer]}</div>
       </div>`).join('')}
-    ${_bulkParsed.length>3?`<div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:8px">...and ${_bulkParsed.length-3} more</div>`:''}`;
+    ${_bulkParsed.length > 3 ? `<div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;padding:8px">...and ${_bulkParsed.length - 3} more</div>` : ''}`;
 
-  saveBtn.style.display='flex';
-  status.textContent='';
+  saveBtn.style.display = 'flex';
+  status.textContent = '';
 }
 
-function parseBulkQuestions(text){
-  const questions=[];
-  const normalized=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  const patterns=[
-    /\n(?=(?:Q\d*[\.:\)]\s*|Q[:\s]\s*|^\d+[\.:\)]\s+)(?![A-Da-d][\.:\)]))/m,
-    /\n(?=(?:Question\s*\d*[\.:\)]?\s*))/mi,
-    /\n(?=(?:^\s*\d+\s*[\.]\s+)(?![A-Da-d][\.:\)]))/m
-  ];
-  let blocks=[];
-  for(const pattern of patterns){
-    blocks=normalized.split(pattern).filter(b=>b.trim());
-    if(blocks.length>1) break;
-  }
-  if(blocks.length<=1){
-    const lines=normalized.split('\n'); let currentBlock=''; blocks=[];
-    for(const line of lines){
-      const trimmed=line.trim();
-      if(/^(Q\d*[\.:\)]?\s*|Q[:\s]\s*|^\d+[\.:\)]\s+|Question\s*\d*[\.:\)]?\s*)/i.test(trimmed)&&!/^[A-Da-d][\.:\)]/.test(trimmed)){
-        if(currentBlock) blocks.push(currentBlock);
-        currentBlock=trimmed+'\n';
-      } else if(trimmed) currentBlock+=trimmed+'\n';
-    }
-    if(currentBlock) blocks.push(currentBlock);
-  }
-  for(const block of blocks){
-    const lines=block.split('\n').map(l=>l.trim()).filter(l=>l);
-    if(lines.length<5) continue;
-    let qText=lines[0].replace(/^(Q\d*[\.:\)]?\s*|Q[:\s]\s*|Question\s*\d*[\.:\)]?\s*)/i,'').replace(/^\d+[\.:\)]\s*/,'').trim();
-    if(!qText && lines[1] && !/^[A-Da-d][\.:\)]/.test(lines[1])) qText=lines[1].trim();
-    if(!qText) continue;
-    const opts=['','','',''];
-    const optMap={a:0,b:1,c:2,d:3};
-    let answer=0,explanation='',answerFound=false;
-    for(let i=1;i<lines.length;i++){
-      const line=lines[i];
-      const optMatch=line.match(/^([A-Da-d])[\.\:\)]\s*(.+)/);
-      if(optMatch){ const idx=optMap[optMatch[1].toLowerCase()]; if(idx!==undefined&&!opts[idx]) opts[idx]=optMatch[2].trim(); continue; }
-      const ansMatch=line.match(/^(?:Ans(?:wer)?|Correct)[\.\:\)]?\s*([A-Da-d])/i);
-      if(ansMatch){ answer=optMap[ansMatch[1].toLowerCase()]||0; answerFound=true; continue; }
-      const explMatch=line.match(/^Expl(?:anation)?[\.\:\)]?\s*(.+)/i);
-      if(explMatch){ explanation=explMatch[1].trim(); continue; }
-      if(explanation&&!line.match(/^[A-Da-d][\.\:\)]/)&&!line.match(/^(?:Ans|Correct|Expl)/i)) explanation+=' '+line;
-    }
-    if(!answerFound) answer=-1;
-    if(qText&&opts.filter(o=>o).length>=2){
-      for(let i=0;i<4;i++) if(!opts[i]) opts[i]='(No option '+'ABCD'[i]+')';
-      questions.push({q:qText,options:opts,answer,explanation:explanation||'See your notes for explanation.'});
-    }
-  }
-  return questions;
-}
+async function saveBulk() {
+  const info = getSelectedCourseInfo();
+  const btn = document.getElementById('bulk-save-btn');
+  const status = document.getElementById('bulk-status');
+  if (!info || !_bulkParsed.length) return;
 
-async function saveBulk(){
-  const subj=document.getElementById('bulk-subject').value;
-  const btn=document.getElementById('bulk-save-btn');
-  const status=document.getElementById('bulk-status');
-  if(!subj||!_bulkParsed.length) return;
+  // Resolve course name + icon from Firebase
+  const courseSnap = await db.ref('departments/' + info.deptKey + '/courses/' + info.courseKey).once('value');
+  const courseData = courseSnap.val() || {};
+  const subj = courseData.name || info.courseKey;
+  const icon = courseData.icon || '📚';
 
-  // Ensure Firebase Auth is ready before writing
+  // Topic
+  const topicSel = document.getElementById('bulk-topic-select');
+  let topicName = '';
+  if (topicSel.value === '__new__') {
+    topicName = (document.getElementById('bulk-topic-input').value || '').trim();
+  } else if (topicSel.value) {
+    // Load topic name from Firebase
+    const topicSnap = await db.ref('departments/' + info.deptKey + '/courses/' + info.courseKey + '/topics/' + topicSel.value).once('value');
+    topicName = (topicSnap.val() || {}).name || topicSel.value;
+  }
+
+  // Save new topic to Firebase if typed
+  if (topicSel.value === '__new__' && topicName) {
+    await saveTopicIfNew(info.deptKey, info.courseKey, topicName);
+  }
+
   try {
     status.textContent = 'Authenticating with Firebase...';
     await ensureFirebaseAuth();
@@ -982,27 +1136,95 @@ async function saveBulk(){
     return;
   }
 
-  btn.disabled=true; btn.textContent='Saving...';
-  const courseObj=CBT_COURSES.find(c=>c.name===subj);
-  const icon=courseObj?(courseObj.icon||'📚'):'📚';
-  let saved=0,failed=0;
-  for(const q of _bulkParsed){
-    try{
-      await db.ref('questions').push({subject:subj,icon,q:q.q,options:q.options,answer:q.answer,explanation:q.explanation,created:Date.now()});
-      saved++; status.textContent=`Saving... ${saved}/${_bulkParsed.length}`;
-    }catch(e){ 
-      failed++; 
-      console.error('Firebase push failed:', e);
+  btn.disabled = true; btn.textContent = 'Saving...';
+  let saved = 0, failed = 0;
+  for (const q of _bulkParsed) {
+    try {
+      await db.ref('questions').push({
+        subject: subj, icon, topic: topicName || '',
+        q: q.q, options: q.options, answer: q.answer,
+        explanation: q.explanation, created: Date.now()
+      });
+      saved++;
+      status.textContent = `Saving... ${saved}/${_bulkParsed.length}`;
+    } catch(e) { failed++; console.error('Firebase push failed:', e); }
+  }
+  btn.disabled = false; btn.textContent = '✅ Save All';
+  status.innerHTML = `<span style="color:#4ade80">✅ ${saved} questions saved to ${subj}!</span>${failed > 0 ? ` <span style="color:#f87171">${failed} failed</span>` : ''}`;
+  document.getElementById('bulk-input').value = '';
+  document.getElementById('bulk-preview').style.display = 'none';
+  btn.style.display = 'none';
+  _bulkParsed = [];
+  loadStats();
+  toast(`✅ ${saved} questions added to ${subj}!`);
+
+  // Reload topics dropdown so new topic appears next time
+  if (topicSel.value === '__new__' && topicName) {
+    loadTopicsForCourse(info.courseKey);
+  }
+}
+
+function parseBulkQuestions(text) {
+  const questions = [];
+  const normalized = text.replace(/
+/g, '
+').replace(/
+/g, '
+');
+  const patterns = [
+    /
+(?=(?:Q\d*[\.\:\)]\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+)(?![A-Da-d][\.\:\)]))/m,
+    /
+(?=(?:Question\s*\d*[\.\:\)]?\s*))/mi,
+    /
+(?=(?:^\s*\d+\s*[\.]\s+)(?![A-Da-d][\.\:\)]))/m
+  ];
+  let blocks = [];
+  for (const pattern of patterns) {
+    blocks = normalized.split(pattern).filter(b => b.trim());
+    if (blocks.length > 1) break;
+  }
+  if (blocks.length <= 1) {
+    const lines = normalized.split('
+'); let currentBlock = ''; blocks = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (/^(Q\d*[\.\:\)]?\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+|Question\s*\d*[\.\:\)]?\s*)/i.test(trimmed) && !/^[A-Da-d][\.\:\)]/.test(trimmed)) {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = trimmed + '
+';
+      } else if (trimmed) currentBlock += trimmed + '
+';
+    }
+    if (currentBlock) blocks.push(currentBlock);
+  }
+  for (const block of blocks) {
+    const lines = block.split('
+').map(l => l.trim()).filter(l => l);
+    if (lines.length < 5) continue;
+    let qText = lines[0].replace(/^(Q\d*[\.\:\)]?\s*|Q[\:\s]\s*|Question\s*\d*[\.\:\)]?\s*)/i, '').replace(/^\d+[\.\:\)]\s*/, '').trim();
+    if (!qText && lines[1] && !/^[A-Da-d][\.\:\)]/.test(lines[1])) qText = lines[1].trim();
+    if (!qText) continue;
+    const opts = ['', '', '', ''];
+    const optMap = { a: 0, b: 1, c: 2, d: 3 };
+    let answer = 0, explanation = '', answerFound = false;
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const optMatch = line.match(/^([A-Da-d])[\.\:\)]\s*(.+)/);
+      if (optMatch) { const idx = optMap[optMatch[1].toLowerCase()]; if (idx !== undefined && !opts[idx]) opts[idx] = optMatch[2].trim(); continue; }
+      const ansMatch = line.match(/^(?:Ans(?:wer)?|Correct)[\.\:\)]?\s*([A-Da-d])/i);
+      if (ansMatch) { answer = optMap[ansMatch[1].toLowerCase()] || 0; answerFound = true; continue; }
+      const explMatch = line.match(/^Expl(?:anation)?[\.\:\)]?\s*(.+)/i);
+      if (explMatch) { explanation = explMatch[1].trim(); continue; }
+      if (explanation && !line.match(/^[A-Da-d][\.\:\)]/) && !line.match(/^(?:Ans|Correct|Expl)/i)) explanation += ' ' + line;
+    }
+    if (!answerFound) answer = -1;
+    if (qText && opts.filter(o => o).length >= 2) {
+      for (let i = 0; i < 4; i++) if (!opts[i]) opts[i] = '(No option ' + 'ABCD'[i] + ')';
+      questions.push({ q: qText, options: opts, answer, explanation: explanation || 'See your notes for explanation.' });
     }
   }
-  btn.disabled=false; btn.textContent='✅ Save All';
-  status.innerHTML=`<span style="color:#4ade80">✅ ${saved} questions saved to ${subj}!</span>${failed>0?` <span style="color:#f87171">${failed} failed`:''}`;
-  document.getElementById('bulk-input').value='';
-  document.getElementById('bulk-preview').style.display='none';
-  btn.style.display='none';
-  _bulkParsed=[];
-  loadStats();
-  toast(`✅ ${saved} questions added!`);
+  return questions;
 }
 
 // ══ ADMIN CHAT ══
@@ -1096,8 +1318,39 @@ async function adminSendChat(){
 }
 
 // ══ LOAD ALL ══
+// ── Bootstrap: ensure Marketing dept + 9 CBT courses exist in Firebase ──
+const MARKETING_COURSES = [
+  { key: 'principles_of_economics',   name: 'Principles of Economics',  icon: '📊' },
+  { key: 'introduction_to_business',  name: 'Introduction to Business', icon: '💼' },
+  { key: 'citizenship_education',     name: 'Citizenship Education',    icon: '🏛️' },
+  { key: 'psychology',                name: 'Psychology',               icon: '🧠' },
+  { key: 'principles_of_accounting',  name: 'Principles of Accounting', icon: '📒' },
+  { key: 'principles_of_law',         name: 'Principles of Law',        icon: '⚖️' },
+  { key: 'computer',                  name: 'Computer',                 icon: '💻' },
+  { key: 'english',                   name: 'English',                  icon: '📖' },
+  { key: 'business_mathematics',      name: 'Business Mathematics',     icon: '🔢' },
+];
+
+async function bootstrapMarketingDept() {
+  try {
+    await ensureFirebaseAuth();
+    const snap = await db.ref('departments/marketing').once('value');
+    if (snap.exists()) return; // already done
+    const updates = { 'departments/marketing/name': 'Marketing', 'departments/marketing/created': Date.now() };
+    for (const c of MARKETING_COURSES) {
+      updates[`departments/marketing/courses/${c.key}/name`] = c.name;
+      updates[`departments/marketing/courses/${c.key}/icon`] = c.icon;
+      updates[`departments/marketing/courses/${c.key}/created`] = Date.now();
+    }
+    await db.ref().update(updates);
+    console.log('[Bootstrap] Marketing dept + 9 courses created in Firebase.');
+    loadDeptDropdown();
+  } catch(e) { console.error('[Bootstrap] Error:', e.message); }
+}
+
 function loadAll(){
   loadStats(); loadStudents(); loadCourses(); loadQuestions(); loadPreviousMonths(); initAdminChat(); loadAnalytics();
+  bootstrapMarketingDept();
 }
 
 function stopAllListeners(){
