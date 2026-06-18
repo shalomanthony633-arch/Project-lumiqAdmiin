@@ -166,6 +166,9 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 }
 @supports(-webkit-touch-callout:none){input,textarea,select{font-size:16px}}
 </style>
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -179,7 +182,7 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
     <input type="password" id="pw-input" placeholder="Enter password"
       style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.18);border-radius:0;padding:12px 4px;font-size:16px;font-family:'DM Mono',monospace;color:#fff;text-align:center;letter-spacing:0.2em;outline:none;transition:all 0.2s;margin-bottom:16px;-webkit-appearance:none"
       onkeydown="if(event.key==='Enter')pinCheck()">
-    <button type="button" class="pin-btn" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;box-shadow:0 4px 24px rgba(14,165,233,0.35)" onclick="pinCheck()">🔐 Enter Admin</button>
+    <button class="pin-btn" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;box-shadow:0 4px 24px rgba(14,165,233,0.35)" onclick="pinCheck()">🔐 Enter Admin</button>
     <button class="finger-btn" onclick="tryFingerprint()" id="finger-btn" style="display:none">
       <span style="font-size:20px">👆</span><span>Unlock with Fingerprint</span>
     </button>
@@ -1038,7 +1041,11 @@ async function runHealthCheck() {
 }
 
 async function nukeAllData() {
-  if (!confirm(`⚠️ This will permanently delete ALL questions AND all departments/courses from Firebase.\n\nThis CANNOT be undone.\n\nContinue?`)) return;
+  if (!confirm('⚠️ This will permanently delete ALL questions AND all departments/courses from Firebase.
+
+This CANNOT be undone.
+
+Continue?')) return;
   const el = document.getElementById('nuke-result');
   el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.5)">Deleting...</div>';
   try {
@@ -1054,6 +1061,42 @@ async function nukeAllData() {
 
 // ══ BULK IMPORT ══
 let _bulkParsed = [];
+
+// ── Normalize pasted text on mobile immediately on paste event ──
+(function() {
+  function normalizeMobilePaste(text) {
+    return text
+      .replace(/
+/g, '
+')
+      .replace(/
+/g, '
+')
+      .replace(/ /g, '
+')
+      .replace(/ /g, '
+')
+      .replace(/ /g, ' ')
+      .replace(/
+{3,}/g, '
+
+');
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var ta = document.getElementById('bulk-input');
+    if (!ta) return;
+    ta.addEventListener('paste', function(e) {
+      e.preventDefault();
+      var pasted = (e.clipboardData || window.clipboardData).getData('text');
+      var normalized = normalizeMobilePaste(pasted);
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var before = ta.value.substring(0, start);
+      var after = ta.value.substring(end);
+      ta.value = before + normalized + after;
+      ta.selectionStart = ta.selectionEnd = start + normalized.length;
+    });
+  });
+})();
 
 function previewBulk() {
   const text = document.getElementById('bulk-input').value.trim();
@@ -1159,11 +1202,20 @@ async function saveBulk() {
 
 function parseBulkQuestions(text) {
   const questions = [];
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const normalized = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\u2028/g, '\n')
+    .replace(/\u2029/g, '\n')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\n{3,}/g, '\n\n');
   const patterns = [
-    /\n(?=(?:Q\d*[\.\:\)]\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+)(?![A-Da-d][\.\:\)]))/m,
-    /\n(?=(?:Question\s*\d*[\.\:\)]?\s*))/mi,
-    /\n(?=(?:^\s*\d+\s*[\.]\s+)(?![A-Da-d][\.\:\)]))/m
+    /
+(?=(?:Q\d*[\.\:\)]\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+)(?![A-Da-d][\.\:\)]))/m,
+    /
+(?=(?:Question\s*\d*[\.\:\)]?\s*))/mi,
+    /
+(?=(?:^\s*\d+\s*[\.]\s+)(?![A-Da-d][\.\:\)]))/m
   ];
   let blocks = [];
   for (const pattern of patterns) {
@@ -1171,18 +1223,22 @@ function parseBulkQuestions(text) {
     if (blocks.length > 1) break;
   }
   if (blocks.length <= 1) {
-    const lines = normalized.split('\n'); let currentBlock = ''; blocks = [];
+    const lines = normalized.split('
+'); let currentBlock = ''; blocks = [];
     for (const line of lines) {
       const trimmed = line.trim();
       if (/^(Q\d*[\.\:\)]?\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+|Question\s*\d*[\.\:\)]?\s*)/i.test(trimmed) && !/^[A-Da-d][\.\:\)]/.test(trimmed)) {
         if (currentBlock) blocks.push(currentBlock);
-        currentBlock = trimmed + '\n';
-      } else if (trimmed) currentBlock += trimmed + '\n';
+        currentBlock = trimmed + '
+';
+      } else if (trimmed) currentBlock += trimmed + '
+';
     }
     if (currentBlock) blocks.push(currentBlock);
   }
   for (const block of blocks) {
-    const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = block.split('
+').map(l => l.trim()).filter(l => l);
     if (lines.length < 5) continue;
     let qText = lines[0].replace(/^(Q\d*[\.\:\)]?\s*|Q[\:\s]\s*|Question\s*\d*[\.\:\)]?\s*)/i, '').replace(/^\d+[\.\:\)]\s*/, '').trim();
     if (!qText && lines[1] && !/^[A-Da-d][\.\:\)]/.test(lines[1])) qText = lines[1].trim();
