@@ -1336,39 +1336,8 @@ async function adminSendChat(){
 }
 
 // ══ LOAD ALL ══
-// ── Bootstrap: ensure Marketing dept + 9 CBT courses exist in Firebase ──
-const MARKETING_COURSES = [
-  { key: 'principles_of_economics',   name: 'Principles of Economics',  icon: '📊' },
-  { key: 'introduction_to_business',  name: 'Introduction to Business', icon: '💼' },
-  { key: 'citizenship_education',     name: 'Citizenship Education',    icon: '🏛️' },
-  { key: 'psychology',                name: 'Psychology',               icon: '🧠' },
-  { key: 'principles_of_accounting',  name: 'Principles of Accounting', icon: '📒' },
-  { key: 'principles_of_law',         name: 'Principles of Law',        icon: '⚖️' },
-  { key: 'computer',                  name: 'Computer',                 icon: '💻' },
-  { key: 'english',                   name: 'English',                  icon: '📖' },
-  { key: 'business_mathematics',      name: 'Business Mathematics',     icon: '🔢' },
-];
-
-async function bootstrapMarketingDept() {
-  try {
-    await ensureFirebaseAuth();
-    const snap = await db.ref('departments/marketing').once('value');
-    if (snap.exists()) return; // already done
-    const updates = { 'departments/marketing/name': 'Marketing', 'departments/marketing/created': Date.now() };
-    for (const c of MARKETING_COURSES) {
-      updates[`departments/marketing/courses/${c.key}/name`] = c.name;
-      updates[`departments/marketing/courses/${c.key}/icon`] = c.icon;
-      updates[`departments/marketing/courses/${c.key}/created`] = Date.now();
-    }
-    await db.ref().update(updates);
-    console.log('[Bootstrap] Marketing dept + 9 courses created in Firebase.');
-    loadDeptDropdown();
-  } catch(e) { console.error('[Bootstrap] Error:', e.message); }
-}
-
 function loadAll(){
   loadStats(); loadStudents(); loadCourses(); loadQuestions(); loadPreviousMonths(); initAdminChat(); loadAnalytics();
-  bootstrapMarketingDept();
 }
 
 function stopAllListeners(){
