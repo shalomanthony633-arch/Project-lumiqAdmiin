@@ -735,8 +735,9 @@ function openPicker(title, sub, options, selectedValue, onSelect) {
     list.querySelectorAll('.picker-row').forEach(row => {
       row.addEventListener('click', () => {
         const val = row.dataset.value;
+        const cb = _pickerOnSelect;
         closePicker();
-        if (_pickerOnSelect) _pickerOnSelect(val);
+        if (cb) cb(val);
       });
     });
   }
