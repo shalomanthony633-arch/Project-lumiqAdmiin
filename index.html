@@ -88,6 +88,36 @@ body{font-family:'DM Sans',sans-serif;background:#04060f;color:#fff;min-height:1
 .field::placeholder{color:rgba(255,255,255,0.25)}
 textarea.field{resize:none;min-height:80px}
 
+/* ── Custom Picker (replaces native <select> for Department/Course/Topic) ── */
+.picker-field{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 14px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:all 0.2s;margin-bottom:8px;-webkit-tap-highlight-color:transparent}
+.picker-field:active{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3)}
+.picker-field-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:600}
+.picker-field-label.placeholder{color:rgba(255,255,255,0.3);font-weight:400}
+.picker-chevron{font-size:10px;color:rgba(255,255,255,0.4);flex-shrink:0;transform:translateY(1px)}
+
+.picker-overlay{position:fixed;inset:0;z-index:9999;background:rgba(4,6,15,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.picker-overlay.active{opacity:1;pointer-events:all}
+.picker-sheet{background:#0f1623;border-radius:24px 24px 0 0;border:1px solid rgba(255,255,255,0.08);border-bottom:none;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;transform:translateY(40px);transition:transform 0.28s cubic-bezier(0.32,0.72,0,1)}
+.picker-overlay.active .picker-sheet{transform:translateY(0)}
+.picker-sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.18);border-radius:3px;margin:0 auto 16px}
+.picker-sheet-title{font-size:16px;font-weight:800}
+.picker-sheet-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px;margin-bottom:16px}
+.picker-list{overflow-y:auto;flex:1;margin:0 -4px;padding:0 4px 4px}
+.picker-row{display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;margin-bottom:7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);cursor:pointer;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.picker-row:active{background:rgba(255,255,255,0.09);transform:scale(0.99)}
+.picker-row.selected{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.45)}
+.picker-row-label{flex:1;font-size:14px;font-weight:600;color:#fff}
+.picker-row-check{width:20px;height:20px;border-radius:50%;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.picker-row-new{color:#a5b4fc;border:1px dashed rgba(99,102,241,0.45);background:rgba(99,102,241,0.07)}
+.picker-empty{font-size:13px;color:rgba(255,255,255,0.35);text-align:center;padding:28px 10px}
+.picker-close-btn{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);margin-top:12px;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0}
+
+/* Icon chip picker (replaces native <select> for course icon) */
+.icon-chip-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.icon-chip-row::-webkit-scrollbar{display:none}
+.icon-chip{flex-shrink:0;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.icon-chip.selected{background:rgba(99,102,241,0.22);border-color:#6366f1;transform:scale(1.08)}
+
 /* Buttons */
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;transition:all 0.18s;padding:11px 18px;font-size:13px;-webkit-appearance:none}
 .btn:disabled{opacity:0.5;cursor:not-allowed;pointer-events:none}
@@ -193,6 +223,18 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 <!-- ADMIN APP -->
 <div id="admin-app">
 <div class="toast" id="toast"></div>
+
+<!-- Shared picker sheet — used by Department / Course / Topic pickers -->
+<div class="picker-overlay" id="picker-overlay" onclick="if(event.target===this) closePicker()">
+  <div class="picker-sheet">
+    <div class="picker-sheet-handle"></div>
+    <div class="picker-sheet-title" id="picker-title"></div>
+    <div class="picker-sheet-sub" id="picker-sub"></div>
+    <div class="picker-list" id="picker-list"></div>
+    <button class="picker-close-btn" onclick="closePicker()">Close</button>
+  </div>
+</div>
+
 
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:10px">
@@ -323,31 +365,29 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
 
       <!-- Step 1: Department -->
       <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 1 — SELECT DEPARTMENT</div>
-      <select class="field" id="bulk-dept" onchange="onBulkDeptChange()" style="margin-bottom:14px">
-        <option value="">-- Select Department --</option>
-      </select>
+      <div class="picker-field" id="bulk-dept-field" onclick="openDeptPicker()" style="margin-bottom:14px">
+        <span class="picker-field-label placeholder" id="bulk-dept-label">-- Select Department --</span>
+        <span class="picker-chevron">▾</span>
+      </div>
+      <input type="hidden" id="bulk-dept" value="">
 
       <!-- Step 2: Course (shown after dept) -->
       <div id="bulk-course-section" style="display:none">
         <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 2 — SELECT COURSE</div>
-        <select class="field" id="bulk-course-select" onchange="onBulkCourseChange()" style="margin-bottom:10px">
-          <option value="">-- Select Course --</option>
-          <option value="__new__">➕ Create new course...</option>
-        </select>
+        <div class="picker-field" id="bulk-course-field" onclick="openCoursePicker()" style="margin-bottom:10px">
+          <span class="picker-field-label placeholder" id="bulk-course-label">-- Select Course --</span>
+          <span class="picker-chevron">▾</span>
+        </div>
+        <input type="hidden" id="bulk-course-select" value="">
 
         <!-- New course creator -->
         <div id="bulk-new-course-box" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">NEW COURSE</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input class="field" id="bulk-new-course-name" placeholder="Course name..." style="margin:0;flex:1">
-            <select class="field" id="bulk-new-course-icon" style="margin:0;width:60px">
-              <option>📊</option><option>💼</option><option>🏛️</option><option>🧠</option>
-              <option>📒</option><option>⚖️</option><option>💻</option><option>📖</option>
-              <option>🔢</option><option>🔬</option><option>📐</option><option>🌍</option>
-              <option>🎯</option><option>📝</option><option>⚡</option><option>🧪</option>
-            </select>
-          </div>
-          <button class="btn btn-green" onclick="saveNewCourse()" style="width:100%;justify-content:center">✅ Save Course</button>
+          <input class="field" id="bulk-new-course-name" placeholder="Course name..." style="margin-bottom:8px">
+          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:.06em;margin-bottom:6px">ICON</div>
+          <div class="icon-chip-row" id="bulk-new-course-icon-row"></div>
+          <input type="hidden" id="bulk-new-course-icon" value="📊">
+          <button class="btn btn-green" onclick="saveNewCourse()" style="width:100%;justify-content:center;margin-top:4px">✅ Save Course</button>
           <div id="new-course-status" style="font-size:12px;margin-top:6px;color:rgba(255,255,255,0.5)"></div>
         </div>
       </div>
@@ -355,10 +395,11 @@ select.field{appearance:none;-webkit-appearance:none;background-image:url("data:
       <!-- Step 3: Topic (shown after course) -->
       <div id="bulk-topic-section" style="display:none">
         <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:6px">STEP 3 — TOPIC</div>
-        <select class="field" id="bulk-topic-select" onchange="onBulkTopicChange()" style="margin-bottom:8px">
-          <option value="">-- Select existing topic --</option>
-          <option value="__new__">✏️ Type new topic...</option>
-        </select>
+        <div class="picker-field" id="bulk-topic-field" onclick="openTopicPicker()" style="margin-bottom:8px">
+          <span class="picker-field-label placeholder" id="bulk-topic-label">-- Select existing topic --</span>
+          <span class="picker-chevron">▾</span>
+        </div>
+        <input type="hidden" id="bulk-topic-select" value="">
         <input class="field" id="bulk-topic-input" placeholder="📌 Type topic name..." style="margin-bottom:14px;display:none">
 
         <!-- Step 4: Questions -->
@@ -670,13 +711,67 @@ let allQuestions = [], questionsListener = null;
 // Flatten icon map from Firebase dept/course data
 const COURSE_ICON_MAP = {};
 
-// ── Load departments list into the bulk-dept dropdown ──
+// In-memory caches for the current picker options
+let _allDepts = [];        // [{key, name}]
+let _coursesForDept = [];  // [{key, name, icon}]
+let _topicsForCourse = []; // [{key, name}]
+
+// ══ SHARED PICKER (bottom-sheet) — replaces native <select> ══
+let _pickerOnSelect = null;
+
+function openPicker(title, sub, options, selectedValue, onSelect) {
+  _pickerOnSelect = onSelect;
+  document.getElementById('picker-title').textContent = title;
+  document.getElementById('picker-sub').textContent = sub || '';
+  const list = document.getElementById('picker-list');
+  if (!options.length) {
+    list.innerHTML = '<div class="picker-empty">Nothing here yet.</div>';
+  } else {
+    list.innerHTML = options.map(o => `
+      <div class="picker-row ${o.value===selectedValue?'selected':''} ${o.isNew?'picker-row-new':''}" data-value="${o.value}">
+        <span class="picker-row-label">${o.label}</span>
+        ${o.value===selectedValue ? '<span class="picker-row-check">✓</span>' : ''}
+      </div>`).join('');
+    list.querySelectorAll('.picker-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const val = row.dataset.value;
+        closePicker();
+        if (_pickerOnSelect) _pickerOnSelect(val);
+      });
+    });
+  }
+  document.getElementById('picker-overlay').classList.add('active');
+}
+
+function closePicker() {
+  document.getElementById('picker-overlay').classList.remove('active');
+  _pickerOnSelect = null;
+}
+
+// ── Icon chip picker (replaces the tiny native icon <select>) ──
+const COURSE_ICONS = ['📊','💼','🏛️','🧠','📒','⚖️','💻','📖','🔢','🔬','📐','🌍','🎯','📝','⚡','🧪'];
+function renderIconChips() {
+  const row = document.getElementById('bulk-new-course-icon-row');
+  if (!row) return;
+  const cur = document.getElementById('bulk-new-course-icon').value || COURSE_ICONS[0];
+  row.innerHTML = COURSE_ICONS.map(ic => `<div class="icon-chip${ic===cur?' selected':''}" data-icon="${ic}">${ic}</div>`).join('');
+  row.querySelectorAll('.icon-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('bulk-new-course-icon').value = chip.dataset.icon;
+      row.querySelectorAll('.icon-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+}
+
+// ── Load departments list into the department picker ──
 function loadDeptDropdown() {
   db.ref('departments').once('value').then(snap => {
-    const depts = [];
-    snap.forEach(child => depts.push(child.key));
-    renderDeptList(depts);
-    populateBulkDeptSelect(depts);
+    _allDepts = [];
+    snap.forEach(child => _allDepts.push({ key: child.key, name: (child.val()||{}).name || child.key }));
+    _allDepts.sort((a, b) => a.name.localeCompare(b.name));
+    renderDeptList(_allDepts);
+    updateDeptFieldLabel();
   });
 }
 
@@ -686,17 +781,28 @@ function renderDeptList(depts) {
   if (!depts.length) { el.innerHTML = '<div class="empty" style="padding:8px 0;font-size:12px">No departments yet.</div>'; return; }
   el.innerHTML = depts.map(d => `
     <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:9px 12px;margin-bottom:6px">
-      <span style="flex:1;font-size:13px;font-weight:700;color:#fff">🏫 ${d}</span>
-      <button class="btn btn-red btn-sm" onclick="deleteDept('${d}')">Delete</button>
+      <span style="flex:1;font-size:13px;font-weight:700;color:#fff">🏫 ${d.name}</span>
+      <button class="btn btn-red btn-sm" onclick="deleteDept('${d.key}')">Delete</button>
     </div>`).join('');
 }
 
-function populateBulkDeptSelect(depts) {
-  const sel = document.getElementById('bulk-dept');
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">-- Select Department --</option>'
-    + depts.map(d => `<option value="${d}"${d===cur?' selected':''}>${d}</option>`).join('');
+function updateDeptFieldLabel() {
+  const val = document.getElementById('bulk-dept').value;
+  const label = document.getElementById('bulk-dept-label');
+  if (!label) return;
+  const found = _allDepts.find(d => d.key === val);
+  if (found) { label.textContent = '🏫 ' + found.name; label.classList.remove('placeholder'); }
+  else { label.textContent = '-- Select Department --'; label.classList.add('placeholder'); }
+}
+
+function openDeptPicker() {
+  const cur = document.getElementById('bulk-dept').value;
+  const options = _allDepts.map(d => ({ value: d.key, label: '🏫 ' + d.name }));
+  openPicker('Select Department', 'Choose which department this course belongs to', options, cur, (val) => {
+    document.getElementById('bulk-dept').value = val;
+    updateDeptFieldLabel();
+    onBulkDeptChange();
+  });
 }
 
 async function createDept() {
@@ -704,15 +810,34 @@ async function createDept() {
   const name = (inp.value || '').trim();
   if (!name) { toast('Enter department name'); return; }
   try { await ensureFirebaseAuth(); } catch(e) { toast('Auth error: '+e.message); return; }
-  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  await db.ref('departments/' + key).update({ name, created: Date.now() });
+
+  // Guard against duplicates (case-insensitive). Previously departments were
+  // keyed by a slugified version of the name, so creating a second
+  // department with a similar name silently OVERWROTE the first one instead
+  // of adding a new one — that's why it looked like the new entry "replaced"
+  // the old one and the dropdown never grew. Now every department gets its
+  // own unique Firebase-generated key, so this can't happen.
+  const existingSnap = await db.ref('departments').once('value');
+  let dupe = false;
+  existingSnap.forEach(child => {
+    if (((child.val()||{}).name || '').trim().toLowerCase() === name.toLowerCase()) dupe = true;
+  });
+  if (dupe) {
+    toast('⚠️ "' + name + '" already exists');
+    inp.value = '';
+    loadDeptDropdown();
+    return;
+  }
+
+  await db.ref('departments').push({ name, created: Date.now() });
   inp.value = '';
   toast('✅ Department "' + name + '" created!');
   loadDeptDropdown();
 }
 
 async function deleteDept(key) {
-  if (!confirm('Delete department "' + key + '" and all its courses? Questions are NOT deleted.')) return;
+  const dept = _allDepts.find(d => d.key === key);
+  if (!confirm('Delete department "' + (dept ? dept.name : key) + '" and all its courses? Questions are NOT deleted.')) return;
   try { await ensureFirebaseAuth(); } catch(e) { toast('Auth error: '+e.message); return; }
   await db.ref('departments/' + key).remove();
   toast('Deleted');
@@ -722,6 +847,7 @@ async function deleteDept(key) {
 // ── Bulk Import: dept → course → topic flow ──
 
 function onBulkDeptChange() {
+  updateDeptFieldLabel();
   const dept = document.getElementById('bulk-dept').value;
   const courseSection = document.getElementById('bulk-course-section');
   const topicSection = document.getElementById('bulk-topic-section');
@@ -729,32 +855,52 @@ function onBulkDeptChange() {
   courseSection.style.display = dept ? 'block' : 'none';
   topicSection.style.display = 'none';
   newCourseBox.style.display = 'none';
-  document.getElementById('bulk-topic-section').style.display = 'none';
   if (!dept) return;
   loadCoursesForDept(dept);
 }
 
 function loadCoursesForDept(dept) {
-  const sel = document.getElementById('bulk-course-select');
-  sel.innerHTML = '<option value="">-- Select Course --</option><option value="__new__">➕ Create new course...</option>';
-  db.ref('departments/' + dept + '/courses').once('value').then(snap => {
+  document.getElementById('bulk-course-select').value = '';
+  updateCourseFieldLabel();
+  return db.ref('departments/' + dept + '/courses').once('value').then(snap => {
+    _coursesForDept = [];
     snap.forEach(child => {
-      const c = child.val();
-      const opt = document.createElement('option');
-      opt.value = child.key;
-      opt.textContent = (c.icon || '📚') + ' ' + (c.name || child.key);
-      sel.appendChild(opt);
+      const c = child.val() || {};
+      _coursesForDept.push({ key: child.key, name: c.name || child.key, icon: c.icon || '📚' });
     });
+    _coursesForDept.sort((a, b) => a.name.localeCompare(b.name));
+  });
+}
+
+function updateCourseFieldLabel() {
+  const val = document.getElementById('bulk-course-select').value;
+  const label = document.getElementById('bulk-course-label');
+  if (!label) return;
+  const found = _coursesForDept.find(c => c.key === val);
+  if (found) { label.textContent = found.icon + ' ' + found.name; label.classList.remove('placeholder'); }
+  else { label.textContent = '-- Select Course --'; label.classList.add('placeholder'); }
+}
+
+function openCoursePicker() {
+  const cur = document.getElementById('bulk-course-select').value;
+  const options = _coursesForDept.map(c => ({ value: c.key, label: c.icon + ' ' + c.name }));
+  options.push({ value: '__new__', label: '➕ Create new course...', isNew: true });
+  openPicker('Select Course', 'Pick an existing course, or create a new one', options, cur, (val) => {
+    document.getElementById('bulk-course-select').value = val;
+    updateCourseFieldLabel();
+    onBulkCourseChange();
   });
 }
 
 function onBulkCourseChange() {
+  updateCourseFieldLabel();
   const val = document.getElementById('bulk-course-select').value;
   const newBox = document.getElementById('bulk-new-course-box');
   const topicSection = document.getElementById('bulk-topic-section');
   if (val === '__new__') {
     newBox.style.display = 'block';
     topicSection.style.display = 'none';
+    renderIconChips();
   } else if (val) {
     newBox.style.display = 'none';
     topicSection.style.display = 'block';
@@ -767,21 +913,43 @@ function onBulkCourseChange() {
 
 function loadTopicsForCourse(courseKey) {
   const dept = document.getElementById('bulk-dept').value;
-  const sel = document.getElementById('bulk-topic-select');
-  sel.innerHTML = '<option value="">-- Select existing topic --</option><option value="__new__">✏️ Type new topic...</option>';
+  document.getElementById('bulk-topic-select').value = '';
+  updateTopicFieldLabel();
   document.getElementById('bulk-topic-input').style.display = 'none';
+  _topicsForCourse = [];
   if (!dept || !courseKey) return;
   db.ref('departments/' + dept + '/courses/' + courseKey + '/topics').once('value').then(snap => {
+    _topicsForCourse = [];
     snap.forEach(child => {
-      const opt = document.createElement('option');
-      opt.value = child.key;
-      opt.textContent = child.val().name || child.key;
-      sel.appendChild(opt);
+      _topicsForCourse.push({ key: child.key, name: (child.val()||{}).name || child.key });
     });
+    _topicsForCourse.sort((a, b) => a.name.localeCompare(b.name));
+  });
+}
+
+function updateTopicFieldLabel() {
+  const val = document.getElementById('bulk-topic-select').value;
+  const label = document.getElementById('bulk-topic-label');
+  if (!label) return;
+  if (val === '__new__') { label.textContent = '✏️ New topic'; label.classList.remove('placeholder'); return; }
+  const found = _topicsForCourse.find(t => t.key === val);
+  if (found) { label.textContent = '📌 ' + found.name; label.classList.remove('placeholder'); }
+  else { label.textContent = '-- Select existing topic --'; label.classList.add('placeholder'); }
+}
+
+function openTopicPicker() {
+  const cur = document.getElementById('bulk-topic-select').value;
+  const options = _topicsForCourse.map(t => ({ value: t.key, label: '📌 ' + t.name }));
+  options.push({ value: '__new__', label: '✏️ Type new topic...', isNew: true });
+  openPicker('Select Topic', 'Group these questions by topic (optional)', options, cur, (val) => {
+    document.getElementById('bulk-topic-select').value = val;
+    updateTopicFieldLabel();
+    onBulkTopicChange();
   });
 }
 
 function onBulkTopicChange() {
+  updateTopicFieldLabel();
   const val = document.getElementById('bulk-topic-select').value;
   const inp = document.getElementById('bulk-topic-input');
   inp.style.display = val === '__new__' ? 'block' : 'none';
@@ -791,22 +959,34 @@ function onBulkTopicChange() {
 async function saveNewCourse() {
   const dept = document.getElementById('bulk-dept').value;
   const name = (document.getElementById('bulk-new-course-name').value || '').trim();
-  const icon = document.getElementById('bulk-new-course-icon').value || '📚';
+  const icon = document.getElementById('bulk-new-course-icon').value || '📊';
   const statusEl = document.getElementById('new-course-status');
   if (!dept || !name) { statusEl.textContent = 'Select a department and enter a course name.'; return; }
   try { await ensureFirebaseAuth(); } catch(e) { statusEl.textContent = 'Auth error: '+e.message; return; }
-  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  await db.ref('departments/' + dept + '/courses/' + key).set({ name, icon, created: Date.now() });
-  COURSE_ICON_MAP[name] = icon;
-  statusEl.innerHTML = '<span style="color:#4ade80">✅ Course saved! Select it from the dropdown.</span>';
+
+  // Guard against duplicate course names within this department (previously
+  // courses were keyed by a slugified name too, so two similarly-named
+  // courses would silently overwrite each other).
+  const existingSnap = await db.ref('departments/' + dept + '/courses').once('value');
+  let key = null;
+  existingSnap.forEach(child => {
+    if (((child.val()||{}).name || '').trim().toLowerCase() === name.toLowerCase()) key = child.key;
+  });
+
+  if (key) {
+    statusEl.innerHTML = '<span style="color:#fbbf24">⚠️ "' + name + '" already exists — selecting it.</span>';
+  } else {
+    const ref = await db.ref('departments/' + dept + '/courses').push({ name, icon, created: Date.now() });
+    key = ref.key;
+    COURSE_ICON_MAP[name] = icon;
+    statusEl.innerHTML = '<span style="color:#4ade80">✅ Course saved! Select it from the dropdown.</span>';
+  }
+
   document.getElementById('bulk-new-course-name').value = '';
-  loadCoursesForDept(dept);
-  // pre-select the new course
-  setTimeout(() => {
-    const sel = document.getElementById('bulk-course-select');
-    sel.value = key;
-    onBulkCourseChange();
-  }, 600);
+  await loadCoursesForDept(dept);
+  document.getElementById('bulk-course-select').value = key;
+  updateCourseFieldLabel();
+  onBulkCourseChange();
 }
 
 function loadCourses() {
@@ -841,9 +1021,16 @@ function getTopicValue() {
 
 async function saveTopicIfNew(deptKey, courseKey, topicName) {
   if (!topicName) return;
-  const topicKey = topicName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  await db.ref('departments/' + deptKey + '/courses/' + courseKey + '/topics/' + topicKey).set({ name: topicName, created: Date.now() });
-  return topicKey;
+  // Avoid creating a duplicate topic (previously slug-based keys meant two
+  // similarly-named topics could overwrite each other too).
+  const snap = await db.ref('departments/' + deptKey + '/courses/' + courseKey + '/topics').once('value');
+  let key = null;
+  snap.forEach(child => {
+    if (((child.val()||{}).name || '').trim().toLowerCase() === topicName.trim().toLowerCase()) key = child.key;
+  });
+  if (key) return key;
+  const ref = await db.ref('departments/' + deptKey + '/courses/' + courseKey + '/topics').push({ name: topicName, created: Date.now() });
+  return ref.key;
 }
 
 // ══ STATS ══
@@ -1337,7 +1524,7 @@ async function adminSendChat(){
 
 // ══ LOAD ALL ══
 function loadAll(){
-  loadStats(); loadStudents(); loadCourses(); loadQuestions(); loadPreviousMonths(); initAdminChat(); loadAnalytics();
+  loadStats(); loadStudents(); loadCourses(); loadQuestions(); loadPreviousMonths(); initAdminChat(); loadAnalytics(); renderIconChips();
 }
 
 function stopAllListeners(){
