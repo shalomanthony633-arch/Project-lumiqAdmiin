@@ -1246,30 +1246,58 @@ async function nukeAllData() {
 // ══ BULK IMPORT ══
 let _bulkParsed = [];
 
-// ── Normalize pasted text on mobile immediately on paste event ──
+// ── Normalize pasted text on mobile ──
+// Previously this intercepted the 'paste' event with preventDefault() and
+// read e.clipboardData.getData('text') manually. On a lot of mobile
+// browsers/webviews (iOS Safari cross-app paste, Android in-app browsers,
+// Gboard clipboard suggestions) that event either fires without usable
+// clipboardData, fires before the OS has actually populated it, or doesn't
+// fire in the expected shape at all — so the manual reconstruction silently
+// grabbed garbled/partial text. The fix: let the browser do the native
+// paste (don't preventDefault, don't touch clipboardData at all), then
+// clean up the textarea's value right after via the 'input' event, which
+// fires reliably for every paste method on every platform.
+function normalizeMobilePaste(text) {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\u2028/g, '\n')
+    .replace(/\u2029/g, '\n')
+    .replace(/\u00A0/g, ' ')
+    // Zero-width / invisible characters that markdown-rendering mobile apps
+    // (ChatGPT app, Notion, etc.) sometimes leave behind when you copy
+    // formatted text. One of these sitting right after a line break and
+    // right before "Q2." is enough to silently break the question-splitter
+    // below, since it requires the marker immediately at the start of the
+    // line — that's the actual cause of everything "mushing into 1 question".
+    .replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, '')
+    // Markdown bold/italic markers some AI apps wrap question numbers in
+    // (e.g. "**Q1.**") — strip them so the marker is bare again.
+    .replace(/\*\*/g, '')
+    .replace(/__/g, '')
+    .replace(/\n{3,}/g, '\n\n');
+}
 (function() {
-  function normalizeMobilePaste(text) {
-    return text
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .replace(/\u2028/g, '\n')
-      .replace(/\u2029/g, '\n')
-      .replace(/\u00A0/g, ' ')
-      .replace(/\n{3,}/g, '\n\n');
-  }
   document.addEventListener('DOMContentLoaded', function() {
     var ta = document.getElementById('bulk-input');
     if (!ta) return;
-    ta.addEventListener('paste', function(e) {
-      e.preventDefault();
-      var pasted = (e.clipboardData || window.clipboardData).getData('text');
-      var normalized = normalizeMobilePaste(pasted);
-      var start = ta.selectionStart, end = ta.selectionEnd;
-      var before = ta.value.substring(0, start);
-      var after = ta.value.substring(end);
-      ta.value = before + normalized + after;
-      ta.selectionStart = ta.selectionEnd = start + normalized.length;
-    });
+    var applying = false;
+    function cleanUp() {
+      if (applying) return;
+      var normalized = normalizeMobilePaste(ta.value);
+      if (normalized === ta.value) return;
+      applying = true;
+      var pos = ta.selectionStart;
+      var lengthDiff = ta.value.length - normalized.length;
+      ta.value = normalized;
+      var newPos = Math.max(0, pos - lengthDiff);
+      try { ta.selectionStart = ta.selectionEnd = newPos; } catch (e) {}
+      applying = false;
+    }
+    ta.addEventListener('input', cleanUp);
+    // Belt-and-braces: also re-check shortly after a paste event in case
+    // the browser populates the value asynchronously.
+    ta.addEventListener('paste', function () { setTimeout(cleanUp, 0); });
   });
 })();
 
@@ -1377,13 +1405,7 @@ async function saveBulk() {
 
 function parseBulkQuestions(text) {
   const questions = [];
-  const normalized = text
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\u2028/g, '\n')
-    .replace(/\u2029/g, '\n')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\n{3,}/g, '\n\n');
+  const normalized = normalizeMobilePaste(text);
   const patterns = [
     /\n(?=(?:Q\d*[\.\:\)]\s*|Q[\:\s]\s*|^\d+[\.\:\)]\s+)(?![A-Da-d][\.\:\)]))/m,
     /\n(?=(?:Question\s*\d*[\.\:\)]?\s*))/mi,
